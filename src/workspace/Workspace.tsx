@@ -29,14 +29,14 @@ type Model = { id: string; name: string; promptPrice?: number; completionPrice?:
 type Theme = 'light' | 'dark';
 const allProvinces = ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State', 'Limpopo', 'Mpumalanga', 'Northern Cape', 'North West'];
 const categories = ['Construction & Civil Engineering', 'Electrical & Plumbing', 'Facilities Management', 'Cleaning & Hygiene', 'Security Services', 'Information Technology', 'Software & Digital Services', 'Consulting & Professional Services', 'Logistics & Transport', 'Catering & Hospitality', 'Education & Training', 'Healthcare & Medical Supply', 'Agriculture', 'Manufacturing & Supply', 'Marketing & Media', 'Nonprofit & Social Services', 'Other'];
-const profileKeys = ['name', 'registration', 'phone', 'description', 'category', 'province', 'city', 'coverage', 'services', 'experience', 'projects', 'cidb'];
+const profileKeys = ['name', 'registration', 'phone', 'description', 'category', 'province', 'city', 'coverage', 'services', 'experience', 'projects'];
 const safeDate = (date: string | undefined) => { const d = new Date(date || ''); return !Number.isNaN(d.getTime()) ? d : null; };
 const formattedDate = (date: string | undefined) => safeDate(date)?.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' }) || 'Not specified';
 const formatSize = (n: number) => n < 1024 * 1024 ? (n / 1024).toFixed(0) + ' KB' : (n / (1024 * 1024)).toFixed(1) + ' MB';
 const tenderStatus = (t: Tender) => {
   const status = t.status.toLowerCase();
   if (/cancel|withdraw/.test(status)) return 'Cancelled';
-  if (/complete|closed|unsuccessful/.test(status)) return 'Closed';
+  if (/complete|closed|unsuccessful|award|terminated/.test(status)) return 'Closed';
   const close = safeDate(t.closesAt);
   if (close && close.getTime() < Date.now()) return 'Closed';
   return close ? 'Open' : 'Check notice';
@@ -175,7 +175,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
   const relevantCount = tenders.filter(t => tenderStatus(t) === 'Open').length;
   const profileCompleted = profileKeys.filter(k => profile[k]?.trim()).length;
   const profilePct = Math.round(profileCompleted / profileKeys.length * 100);
-  const companyName = profile.tradingName || profile.name || 'Your company';
+  const companyName = profile.tradingName || profile.name || 'Your business';
   const savedNext = saved.filter(t => tenderStatus(t) === 'Open').sort((a,b) => (safeDate(a.closesAt)?.getTime() || Infinity) - (safeDate(b.closesAt)?.getTime() || Infinity))[0];
   const expirySoon = files.filter(f => f.expiresAt && daysUntil(f.expiresAt) !== null && (daysUntil(f.expiresAt) as number) <= 30);
   const showTender = (t: Tender) => { setSelected(t); setAnalysis(''); setAiError(''); };
@@ -249,9 +249,9 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
   return <div className={'bo-shell bo-theme-' + theme}>
     {sidebarOpen && <button className="bo-scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
     <aside className={'bo-sidebar ' + (sidebarOpen ? 'bo-sidebar-open' : '')}>
-      <div className="bo-brand"><span className="bo-brand-mark">b<span>.</span></span><span className="bo-brand-word">builda<span>.</span><small>CONTRACTOR OS</small></span><button className="bo-close-nav" onClick={() => setSidebarOpen(false)} aria-label="Close menu"><X size={20}/></button></div>
+      <div className="bo-brand"><span className="bo-brand-mark">b<span>.</span></span><span className="bo-brand-word">builda<span>.</span><small>BUSINESS OS</small></span><button className="bo-close-nav" onClick={() => setSidebarOpen(false)} aria-label="Close menu"><X size={20}/></button></div>
       <div className="bo-nav-section">{nav.map(group => <div key={group.label}><div className="bo-nav-label">{group.label}</div>{group.items.map(item => <button key={item.id} className={'bo-nav-item ' + (view === item.id ? 'active' : '')} onClick={() => changeView(item.id)}>{item.icon}<span>{item.label}</span>{item.id === 'saved' && saved.length > 0 && <i>{saved.length}</i>}</button>)}</div>)}</div>
-      <div className="bo-sidebar-bottom"><button className="bo-signout" onClick={leave}><LogOut size={17}/> Sign out</button><div className="bo-version">BUILDA · CONTRACTOR WORKSPACE</div></div>
+      <div className="bo-sidebar-bottom"><button className="bo-signout" onClick={leave}><LogOut size={17}/> Sign out</button><div className="bo-version">BUILDA · BUSINESS WORKSPACE</div></div>
     </aside>
     <div className="bo-main">
       <div className="bo-topbar"><div className="bo-top-left"><button className="bo-mobile-menu" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}><Menu size={21}/></button><span className="bo-breadcrumb">Your workspace</span><ChevronRight size={14}/><strong>{nav.flatMap(g => g.items).find(n => n.id === view)?.label}</strong></div><div className="bo-top-right"><button className="bo-command-search" onClick={() => { changeView('tenders'); window.setTimeout(() => inputRef.current?.focus(), 100); }}><Search size={17}/> <span>Search opportunities</span></button><span className="bo-top-divider"/><button className="bo-theme-button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>{theme === 'dark' ? <Sun size={18}/> : <Moon size={18}/>}</button><span className="bo-avatar" title={user.email || ''}>{companyName.charAt(0).toUpperCase()}</span></div></div>
@@ -259,7 +259,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
         {notice && <div className="bo-toast" role="status"><CheckCircle2 size={17}/><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss"><X size={15}/></button></div>}
         {view === 'overview' && <>
           {profileError && <div className="bo-inline-error" role="alert">{profileError} <button onClick={() => window.location.reload()}>Retry connection</button></div>}
-          <div className="bo-page-heading"><div><div className="bo-eyebrow"><span className="bo-live-dot"/> YOUR BUSINESS AT A GLANCE</div><h1>{greeting()}, {profile.contactPerson?.split(' ')[0] || 'builder'}<span className="bo-heading-dot">.</span></h1><p>Here’s what’s happening across your business workspace.</p></div><button className="bo-primary" onClick={() => changeView('tenders')}>Explore tenders <ArrowUpRight size={17}/></button></div>
+          <div className="bo-page-heading"><div><div className="bo-eyebrow"><span className="bo-live-dot"/> YOUR BUSINESS AT A GLANCE</div><h1>{greeting()}, {profile.contactPerson?.split(' ')[0] || 'there'}<span className="bo-heading-dot">.</span></h1><p>Here’s what’s happening across your business workspace.</p></div><button className="bo-primary" onClick={() => changeView('tenders')}>Explore tenders <ArrowUpRight size={17}/></button></div>
           <div className="bo-metrics">
             <button className="bo-metric" onClick={() => { setStateFilter('open'); setMatchOnly(true); changeView('tenders'); }}><div><span>Potential opportunities open</span><IconWrap tone="amber"><BriefcaseBusiness size={19}/></IconWrap></div><strong>{feedLoading ? '—' : profileReady ? matchedCount : relevantCount}</strong><small>{profileReady ? 'Profile-aligned notices · eligibility unverified' : 'Complete your company profile to enable matching'}</small><span className="bo-metric-link">Explore <ArrowUpRight size={14}/></span></button>
             <button className="bo-metric" onClick={() => changeView('saved')}><div><span>Saved opportunities</span><IconWrap tone="purple"><Star size={19}/></IconWrap></div><strong>{saved.length}</strong><small>{savedNext ? 'Next closes ' + formattedDate(savedNext.closesAt) : 'Shortlist the work that matters'}</small><span className="bo-metric-link">View list <ArrowUpRight size={14}/></span></button>

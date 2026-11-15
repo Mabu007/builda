@@ -1,4 +1,5 @@
 import { verifyUser, respondError, only } from './_lib/auth.js';
+import { allowedModels } from './models.js';
 
 const calls = new Map();
 const strip = (value, max) => String(value || '').slice(0, max);
@@ -14,7 +15,10 @@ export default async function handler(req, res) {
     if (calls.size > 2000) calls.clear();
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     const model = strip(body.model || 'openai/gpt-4o-mini', 120);
-    if (!/^[\w.:-]+\/[\w.:-]+$/.test(model)) throw Object.assign(new Error('Choose a valid model in Settings.'), { status: 400 });
+    if (!/^[\\w.:-]+\\/[\\w.:-]+$/.test(model)) throw Object.assign(new Error('Choose a valid model in Settings.'), { status: 400 });
+    if (!(await allowedModels()).some(option => option.id === model)) {
+      throw Object.assign(new Error('This model is not in the approved affordable catalogue. Choose another in Settings.'), { status: 400 });
+    }
     const tender = body.tender;
     if (!tender || typeof tender !== 'object' || !tender.id || !tender.title) throw Object.assign(new Error('Select a tender first.'), { status: 400 });
     const brief = {

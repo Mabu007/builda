@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
-import { collection, deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import {
-  ArrowDownToLine, ArrowRight, CalendarDays, Check, CheckCircle2, CloudUpload,
+  ArrowDownToLine, ArrowRight, Check, CloudUpload,
   FileText, FolderOpen, LockKeyhole, Plus, Trash2, UploadCloud, X
 } from 'lucide-react';
 import { db } from '../firebase';
@@ -61,10 +61,11 @@ export default function DocumentVault({ user, files, loading, error, onNotice }:
   const queueFiles = (incoming: FileList | File[]) => {
     const items = Array.from(incoming);
     if (!items.length) return;
-    setBatchError('');
+    if (items.length + drafts.length > MAX_FILES) setBatchError('Upload up to ' + MAX_FILES + ' documents per batch.');
+    else setBatchError('');
     setDrafts(current => {
       const room = Math.max(0, MAX_FILES - current.length);
-      if (items.length > room) setBatchError('Upload up to ' + MAX_FILES + ' documents per batch.');
+      // A maximum of twelve documents can be queued at once.
       return [...current, ...items.slice(0, room).map(file => {
         const ext = (file.name.split('.').pop() || '').toLowerCase();
         const valid = Boolean(ACCEPTED[ext]) && file.size > 0 && file.size <= MAX_BYTES;
@@ -132,7 +133,7 @@ export default function DocumentVault({ user, files, loading, error, onNotice }:
     setBusy(false);
     if (completed) onNotice(completed + (completed === 1 ? ' document saved.' : ' documents saved.') + ' Your vault updates automatically.');
     if (rejected) setBatchError(rejected + (rejected === 1 ? ' document needs attention.' : ' documents need attention.') + ' Fix and retry them individually.');
-    else closeUpload();
+    else { setUploadOpen(false); setDrafts([]); setBatchError(''); setProgress({ done: 0, total: 0 }); }
   };
 
   const openFile = async (file: VaultFile) => {

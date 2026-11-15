@@ -4,7 +4,7 @@ const endpoint = 'https://ocds-api.etenders.gov.za/api/OCDSReleases';
 const cache = new Map();
 const asText = (v, max = 4000) => typeof v === 'string' ? v.trim().slice(0, max) : '';
 const safeUrl = (v) => { try { const u = new URL(v); return ['https:', 'http:'].includes(u.protocol) ? u.href : null; } catch { return null; } };
-function normalize(release) {
+export function normalize(release) {
   const t = release?.tender;
   if (!t || (!t.title && !t.description)) return null;
   const ocid = asText(release.ocid, 180);
@@ -23,7 +23,7 @@ function normalize(release) {
     value: typeof t.value?.amount === 'number' ? t.value.amount : null,
     currency: asText(t.value?.currency, 6), documents: docs,
     source: 'National Treasury eTenders OCDS',
-    sourceUrl: safeUrl(t.communication?.atypicalToolUrl) || 'https://www.etenders.gov.za/'
+    sourceUrl: safeUrl(t.communication?.atypicalToolUrl) || 'https://ocds-api.etenders.gov.za/api/OCDSReleases/release/' + encodeURIComponent(ocid)
   };
 }
 export default async function handler(req, res) {

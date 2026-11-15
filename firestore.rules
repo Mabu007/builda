@@ -2,20 +2,72 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function admin() { return signedIn() && request.auth.token.admin == true; }
-    match /contractors/{uid} {
-      allow read: if admin() || (signedIn() && request.auth.uid == uid);
-      allow create, update: if signedIn() && request.auth.uid == uid && request.resource.data.ownerId == uid;
-      allow delete: if false;
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function isAdmin() { return signedIn() && request.auth.token.admin == true; }
+    function smallString(field, max) { return field is string && field.size() <= max; }
+    function profileFieldsValid() {
+      return request.resource.data.keys().hasOnly([
+        'ownerId','email','name','registration','phone','tradingName','contactPerson',
+        'whatsapp','description','category','province','city','coverage','services',
+        'cidb','experience','projects','goals','updatedAt'
+      ])
+      && request.resource.data.ownerId == request.auth.uid
+      && request.resource.data.get('name','') is string
+      && request.resource.data.get('name','').size() <= 200
+      && request.resource.data.get('email','') is string
+      && request.resource.data.get('email','').size() <= 254
+      && request.resource.data.get('description','').size() <= 4000
+      && request.resource.data.get('services','').size() <= 4000
+      && request.resource.data.get('projects','').size() <= 4000;
     }
-    match /jobs/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['title','category','description','province','city','contact','createdAt','status','source']) && request.resource.data.title is string && request.resource.data.title.size() > 2 && request.resource.data.title.size() < 150 && request.resource.data.description is string && request.resource.data.description.size() < 5000 && request.resource.data.contact is string && request.resource.data.contact.size() > 3 && request.resource.data.contact.size() < 200 && request.resource.data.status == 'new' && request.resource.data.source == 'website';
-      allow read, update, delete: if admin();
+    match /contractors/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) && profileFieldsValid();
+      allow update: if isOwner(uid) && resource.data.ownerId == uid && profileFieldsValid();
+      allow delete: if false;
+      match /settings/{docId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && docId == 'preferences'
+          && request.resource.data.keys().hasOnly(['model','updatedAt'])
+          && request.resource.data.model is string
+          && request.resource.data.model.size() < 130
+          && request.resource.data.model.matches('^[a-zA-Z0-9._:-]+/[a-zA-Z0-9._:-]+$');
+        allow delete: if false;
+      }
+      match /savedTenders/{id} {
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && request.resource.data.ownerId == uid
+          && request.resource.data.id is string
+          && request.resource.data.id.size() < 200
+          && request.resource.data.title is string
+          && request.resource.data.title.size() <= 280;
+        allow update: if false;
+      }
+      match /documents/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['ownerId','key','name','type','size','category','expiresAt','createdAt'])
+          && request.resource.data.ownerId == uid
+          && request.resource.data.key is string
+          && request.resource.data.key.matches('^contractors/' + uid + '/' + id + '/[a-zA-Z0-9._ ()-]{1,110}$')
+          && smallString(request.resource.data.name, 110)
+          && smallString(request.resource.data.type, 180)
+          && smallString(request.resource.data.category, 80)
+          && smallString(request.resource.data.expiresAt, 20)
+          && request.resource.data.size is int
+          && request.resource.data.size > 0 && request.resource.data.size <= 15728640
+          && request.resource.data.createdAt == request.time;
+        allow delete: if isOwner(uid);
+        allow update: if false;
+      }
     }
     match /opportunities/{id} {
-      allow read: if resource.data.published == true || admin();
-      allow write: if admin();
+      allow read: if resource.data.published == true || isAdmin();
+      allow write: if isAdmin();
     }
+    // Retired public job intake: unauthenticated submissions must not reach Firestore.
+    match /jobs/{id} { allow read, write: if isAdmin(); }
     match /{document=**} { allow read, write: if false; }
   }
 }

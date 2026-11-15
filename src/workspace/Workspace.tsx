@@ -12,10 +12,13 @@ import {
 import { auth, db } from '../firebase';
 import { matchTender, hasMatchingProfile } from './matching';
 import DocumentVault from './DocumentVault';
+import AssistantHub from './AssistantHub';
+import OrganisationOnboarding from './OrganisationOnboarding';
+import type { OrganisationType } from './OrganisationOnboarding';
 import type { VaultFile } from './DocumentVault';
 import './workspace.css';
 
-type View = 'overview' | 'tenders' | 'saved' | 'documents' | 'company' | 'settings';
+type View = 'overview' | 'tenders' | 'saved' | 'documents' | 'company' | 'settings' | 'assistant';
 type Tender = {
   id: string; reference: string; title: string; description: string; buyer: string; province: string;
   category: string; status: string; publishedAt: string; closesAt: string;
@@ -59,7 +62,7 @@ function Empty({ icon, title, body, action }: { icon: React.ReactNode; title: st
 function Status({ value }: { value: string }) { return <span className={'bo-status ' + (value === 'Open' ? 'bo-status-open' : value === 'Closed' || value === 'Cancelled' ? 'bo-status-closed' : 'bo-status-verify')}><span />{value}</span>; }
 export default function Workspace({ user, onExit }: { user: User; onExit: () => void }) {
   const fromPath = window.location.pathname.replace(/^\/app\/?/, '').split('/')[0];
-  const [view, setView] = useState<View>(['overview', 'tenders', 'saved', 'documents', 'company', 'settings'].includes(fromPath) ? fromPath as View : 'overview');
+  const [view, setView] = useState<View>(['overview', 'tenders', 'saved', 'documents', 'company', 'settings', 'assistant'].includes(fromPath) ? fromPath as View : 'overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState<Company>({});
   const [draft, setDraft] = useState<Company>({});
@@ -89,11 +92,12 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
   const [stateFilter, setStateFilter] = useState<'open' | 'all'>('open');
   const [matchOnly, setMatchOnly] = useState(true);
   const [selected, setSelected] = useState<Tender | null>(null);
+  const [assistantTender, setAssistantTender] = useState<Tender | null>(null);
   const [analysis, setAnalysis] = useState('');
   const [analysing, setAnalysing] = useState(false);
   const [aiError, setAiError] = useState('');
-  const [model, setModel] = useState('openai/gpt-4o-mini');
-  const [models, setModels] = useState<Model[]>([{ id: 'openai/gpt-4o-mini', name: 'GPT-4o mini' }]);
+  const [model, setModel] = useState('openrouter/free');
+  const [models, setModels] = useState<Model[]>([{ id: 'openrouter/free', name: 'Free auto · OpenRouter' }]);
   const [modelSaving, setModelSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const feedRequestId = useRef(0);
@@ -104,6 +108,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
   }, [theme]);
   const changeView = (next: View) => {
     setView(next); setSidebarOpen(false); setNotice('');
+    if (next !== 'assistant') setAssistantTender(null);
     const path = next === 'overview' ? '/app' : '/app/' + next;
     if (window.location.pathname !== path) window.history.pushState(null, '', path);
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -111,7 +116,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
   useEffect(() => {
     const onBack = () => {
       const next = window.location.pathname.replace(/^\/app\/?/, '').split('/')[0];
-      if (['overview', 'tenders', 'saved', 'documents', 'company', 'settings'].includes(next)) setView(next as View);
+      if (['overview', 'tenders', 'saved', 'documents', 'company', 'settings', 'assistant'].includes(next)) setView(next as View);
       else if (window.location.pathname === '/app' || window.location.pathname === '/app/') setView('overview');
       setSelected(null); setSidebarOpen(false);
     };
@@ -173,8 +178,10 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
     });
   }, [tenders, stateFilter, search, province, matchOnly, profileReady, matchMap]);
   const relevantCount = tenders.filter(t => tenderStatus(t) === 'Open').length;
-  const profileCompleted = profileKeys.filter(k => profile[k]?.trim()).length;
-  const profilePct = Math.round(profileCompleted / profileKeys.length * 100);
+  const isNpo = profile.organizationType === 'npo';
+  const requiredKeys = isNpo ? profileKeys.filter(k => !['registration', 'experience'].includes(k)) : profileKeys;
+  const profileCompleted = requiredKeys.filter(k => profile[k]?.trim()).length;
+  const profilePct = Math.round(profileCompleted / requiredKeys.length * 100);
   const companyName = profile.tradingName || profile.name || 'Your business';
   const savedNext = saved.filter(t => tenderStatus(t) === 'Open').sort((a,b) => (safeDate(a.closesAt)?.getTime() || Infinity) - (safeDate(b.closesAt)?.getTime() || Infinity))[0];
   const expirySoon = files.filter(f => f.expiresAt && daysUntil(f.expiresAt) !== null && (daysUntil(f.expiresAt) as number) <= 30);
@@ -182,12 +189,12 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
 
   const saveCompany = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!db || !draft.name?.trim()) { setProfileError('A registered company name is required.'); return; }
+    if (!db || !draft.name?.trim()) { setProfileError('An organisation name is required.'); return; }
     setProfileSaving(true); setProfileError('');
     try {
       const record = Object.fromEntries(Object.entries(draft).filter(([key]) => [...profileKeys, 'tradingName', 'contactPerson', 'whatsapp', 'goals'].includes(key)).map(([key, val]) => [key, String(val || '').slice(0, 4000)]));
-      await setDoc(doc(db, 'contractors', user.uid), { ...record, ownerId: user.uid, email: user.email || '', updatedAt: serverTimestamp() }, { merge: true });
-      setProfile(record); setNotice('Company profile saved securely.');
+      await setDoc(doc(db, 'contractors', user.uid), { ...record, organizationType: profile.organizationType || 'business', ownerId: user.uid, email: user.email || '', updatedAt: serverTimestamp() }, { merge: true });
+      setProfile(prev => ({ ...prev, ...record })); setNotice('Organisation profile saved. Your matching will improve.');
     } catch { setProfileError('Unable to save. Check your Firestore permissions and try again.'); }
     finally { setProfileSaving(false); }
   };
@@ -264,7 +271,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
             <button className="bo-metric" onClick={() => { setStateFilter('open'); setMatchOnly(true); changeView('tenders'); }}><div><span>Potential opportunities open</span><IconWrap tone="amber"><BriefcaseBusiness size={19}/></IconWrap></div><strong>{feedLoading ? '—' : profileReady ? matchedCount : relevantCount}</strong><small>{profileReady ? 'Profile-aligned notices · eligibility unverified' : 'Complete your company profile to enable matching'}</small><span className="bo-metric-link">Explore <ArrowUpRight size={14}/></span></button>
             <button className="bo-metric" onClick={() => changeView('saved')}><div><span>Saved opportunities</span><IconWrap tone="purple"><Star size={19}/></IconWrap></div><strong>{saved.length}</strong><small>{savedNext ? 'Next closes ' + formattedDate(savedNext.closesAt) : 'Shortlist the work that matters'}</small><span className="bo-metric-link">View list <ArrowUpRight size={14}/></span></button>
             <button className="bo-metric" onClick={() => changeView('documents')}><div><span>Secure documents</span><IconWrap tone="blue"><FolderOpen size={19}/></IconWrap></div><strong>{files.length}</strong><small>{expirySoon.length ? expirySoon.length + ' expiry dates need review' : 'Your private compliance vault'}</small><span className="bo-metric-link">Open vault <ArrowUpRight size={14}/></span></button>
-            <button className="bo-metric" onClick={() => changeView('company')}><div><span>Company profile</span><IconWrap tone="green"><ShieldCheck size={19}/></IconWrap></div><strong>{profileLoading ? '—' : profilePct + '%'}</strong><small>{profileCompleted} of {profileKeys.length} key fields completed</small><div className="bo-progress"><span style={{ width: profilePct + '%' }}/></div></button>
+            <button className="bo-metric" onClick={() => changeView('company')}><div><span>Company profile</span><IconWrap tone="green"><ShieldCheck size={19}/></IconWrap></div><strong>{profileLoading ? '—' : profilePct + '%'}</strong><small>{profileCompleted} of {requiredKeys.length} key fields completed</small><div className="bo-progress"><span style={{ width: profilePct + '%' }}/></div></button>
           </div>
           <div className="bo-section-grid">
             <section className="bo-panel bo-feed-preview"><div className="bo-panel-title"><div><div className="bo-small-kicker">DISCOVER</div><h3>{profileReady ? 'Matched opportunities' : 'Recent opportunities'} <span>from eTenders</span></h3><p>{profileReady ? 'Ranked using your business details; eligibility still needs checking.' : 'Complete your profile to personalise your feed.'}</p></div><button className="bo-text-action" onClick={() => changeView('tenders')}>View all <ArrowRight size={16}/></button></div>
@@ -273,7 +280,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
             </section>
             <section className="bo-panel bo-attention"><div className="bo-panel-title"><div><div className="bo-small-kicker">YOUR NEXT STEPS</div><h3>Needs your attention</h3><p>Simple actions to keep your business ready.</p></div><IconWrap tone="amber"><Bell size={18}/></IconWrap></div>
               <div className="bo-attention-list">
-                {profilePct < 100 && <button onClick={() => changeView('company')}><span className="bo-attention-symbol"><Building2 size={18}/></span><span><strong>Complete your company profile</strong><small>{profileKeys.length - profileCompleted} recommended fields remaining</small></span><ArrowUpRight size={16}/></button>}
+                {profilePct < 100 && <button onClick={() => changeView('company')}><span className="bo-attention-symbol"><Building2 size={18}/></span><span><strong>Complete your company profile</strong><small>{requiredKeys.length - profileCompleted} recommended fields remaining</small></span><ArrowUpRight size={16}/></button>}
                 {files.length === 0 && <button onClick={() => changeView('documents')}><span className="bo-attention-symbol"><CloudUpload size={18}/></span><span><strong>Upload your compliance documents</strong><small>Keep them secure and easy to access</small></span><ArrowUpRight size={16}/></button>}
                 {expirySoon.slice(0,2).map(f => <button key={f.id} onClick={() => changeView('documents')}><span className="bo-attention-symbol"><Clock3 size={18}/></span><span><strong>Review {f.name}</strong><small>Expiry: {formattedDate(f.expiresAt)}</small></span><ArrowUpRight size={16}/></button>)}
                 {savedNext && <button onClick={() => showTender(savedNext)}><span className="bo-attention-symbol"><BriefcaseBusiness size={18}/></span><span><strong>Upcoming saved tender deadline</strong><small>{formattedDate(savedNext.closesAt)} · {savedNext.buyer}</small></span><ArrowUpRight size={16}/></button>}
@@ -303,7 +310,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
          {view === 'documents' && <DocumentVault user={user} files={files} loading={vaultLoading} error={vaultError} onNotice={setNotice}/>} 
         {view === 'company' && <><div className="bo-page-heading"><div><div className="bo-eyebrow"><Building2 size={14}/> COMPANY IDENTITY</div><h1>Company profile<span className="bo-heading-dot">.</span></h1><p>Help BUILDA understand your services, experience and where you work.</p></div><span className="bo-private"><LockKeyhole size={14}/> Private company record</span></div>
           <div className="bo-company-grid"><section className="bo-panel bo-profile-card"><div className="bo-panel-title"><div><div className="bo-small-kicker">YOUR COMPANY DETAILS</div><h3>Business information</h3><p>Update your company information anytime.</p></div></div>{profileError && <div className="bo-inline-error">{profileError}</div>}<form onSubmit={saveCompany} className="bo-company-form"><div className="bo-form-row"><label>Registered business name *<input required value={draft.name || ''} onChange={e => setDraft(p => ({...p, name:e.target.value}))}/></label><label>Trading name<input value={draft.tradingName || ''} onChange={e => setDraft(p => ({...p, tradingName:e.target.value}))}/></label></div><div className="bo-form-row"><label>Company registration number<input value={draft.registration || ''} onChange={e => setDraft(p => ({...p, registration:e.target.value}))}/></label><label>Contact person<input value={draft.contactPerson || ''} onChange={e => setDraft(p => ({...p, contactPerson:e.target.value}))}/></label></div><div className="bo-form-row"><label>Contact phone<input type="tel" value={draft.phone || ''} onChange={e => setDraft(p => ({...p, phone:e.target.value}))}/></label><label>WhatsApp<input type="tel" value={draft.whatsapp || ''} onChange={e => setDraft(p => ({...p, whatsapp:e.target.value}))}/></label></div><label>What does your company do?<textarea rows={3} value={draft.description || ''} onChange={e => setDraft(p => ({...p, description:e.target.value}))}/></label><div className="bo-form-row"><label>Primary industry or service<input list="bo-industry-options" maxLength={120} value={draft.category || ''} onChange={e => setDraft(p => ({...p, category:e.target.value}))} placeholder="e.g. IT services, Civil Engineering"/><datalist id="bo-industry-options">{categories.map(c => <option key={c} value={c}/>)}</datalist></label><label>Province<select value={draft.province || ''} onChange={e => setDraft(p => ({...p, province:e.target.value}))}><option value="">Select province</option>{allProvinces.map(p => <option key={p}>{p}</option>)}</select></label></div><div className="bo-form-row"><label>City or suburb<input value={draft.city || ''} onChange={e => setDraft(p => ({...p, city:e.target.value}))}/></label><label>Years of experience<input value={draft.experience || ''} onChange={e => setDraft(p => ({...p, experience:e.target.value}))}/></label></div><label>Areas you serve<input value={draft.coverage || ''} onChange={e => setDraft(p => ({...p, coverage:e.target.value}))} placeholder="Cities and provinces"/></label><label>Services and capabilities<textarea rows={3} value={draft.services || ''} onChange={e => setDraft(p => ({...p, services:e.target.value}))}/></label><label>CIDB grading or registration (if applicable)<input value={draft.cidb || ''} onChange={e => setDraft(p => ({...p, cidb:e.target.value}))}/></label><label>Relevant project experience<textarea rows={3} value={draft.projects || ''} onChange={e => setDraft(p => ({...p, projects:e.target.value}))}/></label><label>Business development goals<textarea rows={3} value={draft.goals || ''} onChange={e => setDraft(p => ({...p, goals:e.target.value}))}/></label><div className="bo-form-footer"><span><LockKeyhole size={14}/> Your details are self-declared and not independently verified.</span><button className="bo-primary" disabled={profileSaving}>{profileSaving ? 'Saving…' : 'Save changes'} <ArrowRight size={16}/></button></div></form></section>
-          <aside className="bo-profile-aside"><div className="bo-panel bo-profile-score"><div className="bo-small-kicker">BUSINESS READINESS</div><h3>Make your profile complete.</h3><div className="bo-big-score">{profilePct}<span>%</span></div><div className="bo-progress"><span style={{width: profilePct + '%'}}/></div><p>{profileCompleted} out of {profileKeys.length} suggested fields completed.</p><div className="bo-score-items">{profileKeys.slice(0,6).map(key => <div key={key}><span className={profile[key] ? 'complete' : ''}>{profile[key] ? <Check size={14}/> : <span/>}</span>{key === 'name' ? 'Registered name' : key === 'registration' ? 'Registration' : key === 'category' ? 'Primary service' : key.charAt(0).toUpperCase() + key.slice(1)}</div>)}</div></div><div className="bo-profile-hint"><ShieldCheck size={19}/><strong>Private by design</strong><p>Your company record is only accessible to your account and authorised platform administrators.</p></div></aside></div>
+          <aside className="bo-profile-aside"><div className="bo-panel bo-profile-score"><div className="bo-small-kicker">BUSINESS READINESS</div><h3>Make your profile complete.</h3><div className="bo-big-score">{profilePct}<span>%</span></div><div className="bo-progress"><span style={{width: profilePct + '%'}}/></div><p>{profileCompleted} out of {requiredKeys.length} suggested fields completed.</p><div className="bo-score-items">{requiredKeys.slice(0,6).map(key => <div key={key}><span className={profile[key] ? 'complete' : ''}>{profile[key] ? <Check size={14}/> : <span/>}</span>{key === 'name' ? 'Registered name' : key === 'registration' ? 'Registration' : key === 'category' ? 'Primary service' : key.charAt(0).toUpperCase() + key.slice(1)}</div>)}</div></div><div className="bo-profile-hint"><ShieldCheck size={19}/><strong>Private by design</strong><p>Your company record is only accessible to your account and authorised platform administrators.</p></div></aside></div>
         </>}
         {view === 'settings' && <><div className="bo-page-heading"><div><div className="bo-eyebrow"><Settings2 size={14}/> PERSONALISE YOUR WORKSPACE</div><h1>Settings<span className="bo-heading-dot">.</span></h1><p>Choose how BUILDA works for you.</p></div></div><div className="bo-settings-stack"><section className="bo-panel bo-setting-card"><div className="bo-setting-icon">{theme === 'dark' ? <Moon size={21}/> : <Sun size={21}/>}</div><div><div className="bo-small-kicker">APPEARANCE</div><h3>Workspace theme</h3><p>Choose your preferred display. This choice stays on your device.</p><div className="bo-theme-options"><button className={theme === 'light' ? 'active' : ''} onClick={() => setTheme('light')}><Sun size={17}/> Light</button><button className={theme === 'dark' ? 'active' : ''} onClick={() => setTheme('dark')}><Moon size={17}/> Dark</button></div></div></section><section className="bo-panel bo-setting-card"><div className="bo-setting-icon"><Bot size={21}/></div><div><div className="bo-small-kicker">AI ASSISTANT</div><h3>Your preferred model</h3><p>Choose the AI model used when you ask BUILDA to explain a tender. Models have different availability and usage costs.</p><label>Model<select value={model} onChange={e => setModel(e.target.value)}>{!models.some(m=>m.id===model) && <option value={model}>{model}</option>}{models.map(m => <option key={m.id} value={m.id}>{m.name} · {m.id}</option>)}</select></label><button className="bo-primary" disabled={modelSaving} onClick={() => void saveModel()}>{modelSaving ? 'Saving…' : 'Save model preference'} <Check size={16}/></button></div></section><section className="bo-panel bo-setting-card"><div className="bo-setting-icon"><LockKeyhole size={21}/></div><div><div className="bo-small-kicker">ACCOUNT & PRIVACY</div><h3>Account</h3><p>Signed in as <strong>{user.email}</strong>. Your company profile, saved opportunities and file metadata are stored in private Firestore paths.</p><button className="bo-outline" onClick={leave}><LogOut size={16}/> Sign out of BUILDA</button></div></section></div></>}
         <div className="bo-footer"><span>BUILDA · MADE FOR THE BUSINESSES BUILDING TOMORROW</span><span>South Africa · © {new Date().getFullYear()}</span></div>

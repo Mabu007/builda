@@ -47,11 +47,13 @@ service cloud.firestore {
       match /documents/{id} {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid)
-          && request.resource.data.keys().hasOnly(['ownerId','key','name','type','size','category','expiresAt','createdAt'])
+          && request.resource.data.keys().hasOnly(['ownerId','key','name','originalName','description','type','size','category','expiresAt','createdAt'])
           && request.resource.data.ownerId == uid
           && request.resource.data.key is string
           && request.resource.data.key.matches('^contractors/' + uid + '/' + id + '/[a-zA-Z0-9._ ()-]{1,110}$')
           && smallString(request.resource.data.name, 110)
+          && smallString(request.resource.data.get('originalName',''), 110)
+          && smallString(request.resource.data.get('description',''), 1000)
           && smallString(request.resource.data.type, 180)
           && smallString(request.resource.data.category, 80)
           && smallString(request.resource.data.expiresAt, 20)

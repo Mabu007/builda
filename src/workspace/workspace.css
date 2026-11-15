@@ -212,3 +212,7 @@
 @media(max-width:1080px){.bo-brand-word{font-size:17px!important}}
 @media(max-width:790px){.bo-brand-word{font-size:20px!important}.bo-npo-sources{align-items:flex-start;flex-wrap:wrap}.bo-npo-sources button{margin-left:56px}}
 @media(max-width:560px){.bo-npo-sources{padding:14px}.bo-npo-icon{height:36px;width:36px}.bo-npo-sources button{margin-left:0;width:100%;justify-content:center}.bo-chat-viewport{padding:0}.bo-dialog-actions{gap:8px}.bo-dialog-actions>button,.bo-dialog-actions>a{flex:1 1 auto}}
+
+.bo-ai-test-good{margin-top:13px;border:1px solid #d7eadc;background:#ecf7ef;color:#36694b;border-radius:9px;padding:12px 14px;font-size:11px;line-height:1.6}
+.bo-theme-dark .bo-ai-test-good{background:#234334;border-color:#466f55;color:#c1e9c6}
+@media(max-width:560px){.bo-setting-card .bo-outline{margin:10px 0 0!important;width:100%}}

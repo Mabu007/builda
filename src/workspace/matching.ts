@@ -8,7 +8,7 @@ type TenderCandidate = {
 };
 type CompanyDetails = Record<string, string>;
 const serviceGroups: { name: string; terms: string[] }[] = [
-  { name: 'building', terms: ['building', 'construction', 'renovation', 'refurbishment', 'alterations', 'building works'] },
+  { name: 'building', terms: ['building', 'renovation', 'refurbishment', 'alterations', 'building works'] },
   { name: 'civil engineering', terms: ['civil', 'roads', 'roadwork', 'bridge', 'stormwater', 'infrastructure', 'earthworks', 'sewer', 'water pipeline'] },
   { name: 'electrical', terms: ['electrical', 'wiring', 'lighting', 'power installation', 'substation', 'solar'] },
   { name: 'plumbing', terms: ['plumbing', 'sanitation', 'drainage', 'pipes', 'water supply'] },
@@ -39,10 +39,13 @@ export function matchTender(tender: TenderCandidate, profile: CompanyDetails) {
   else reasons.push('Published service category is unclear');
 
   const locations = [profile.province, profile.coverage, profile.city].filter(Boolean).join(' ').toLowerCase();
+  const nationally = /nationwide|national|south africa|all provinces|across the country/.test(locations);
   const noticeLocation = (tender.province || '').toLowerCase();
-  const listedProvinces = provinces.filter(p => noticeLocation.includes(p));
+  const normalizeLocation = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const listedProvinces = provinces.filter(p => normalizeLocation(noticeLocation).includes(normalizeLocation(p)));
   if (listedProvinces.length === 0) { reasons.push('Location not confirmed'); }
-  else if (listedProvinces.some(p => locations.includes(p))) { score += 19; reasons.push('Works in your stated service area'); }
+  else if (nationally) { score += 15; reasons.push('Nationwide coverage declared'); }
+  else if (listedProvinces.some(p => normalizeLocation(locations).includes(normalizeLocation(p)))) { score += 19; reasons.push('Works in your stated service area'); }
   else { score -= 10; reasons.push('Outside your stated province — verify coverage'); }
 
   const closes = tender.closesAt ? new Date(tender.closesAt) : null;

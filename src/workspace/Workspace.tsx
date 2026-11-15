@@ -74,6 +74,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
   const [profileError, setProfileError] = useState('');
   const [notice, setNotice] = useState('');
   const [vaultError, setVaultError] = useState('');
+  const [vaultLoading, setVaultLoading] = useState(true);
   const [savedError, setSavedError] = useState('');
   const [theme, setTheme] = useState<Theme>(() => {
     try { const saved = localStorage.getItem('builda-theme'); if (saved === 'dark' || saved === 'light') return saved; }
@@ -151,8 +152,8 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
       if (active && snap.exists() && typeof snap.data().model === 'string') setModel(snap.data().model);
     }).catch(() => {});
     const unwatchFiles = onSnapshot(collection(db, 'contractors', user.uid, 'documents'), snap => {
-      if (active) { setVaultError(''); setFiles(snap.docs.map(s => ({ ...s.data(), id: s.id } as VaultFile)).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))); }
-    }, () => { if (active) setVaultError('Document metadata is unavailable. Your uploaded files have not been deleted. Verify Firestore access, then reload.'); });
+      if (active) { setVaultError(''); setVaultLoading(false); setFiles(snap.docs.map(s => ({ ...s.data(), id: s.id } as VaultFile)).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))); }
+    }, () => { if (active) { setVaultLoading(false); setVaultError('Document metadata is unavailable. No files were deleted. Verify Firestore access, then reload.'); } });
     const unwatchSaved = onSnapshot(collection(db, 'contractors', user.uid, 'savedTenders'), snap => {
       if (active) { setSavedError(''); setSaved(snap.docs.map(s => s.data() as Tender)); }
     }, () => { if (active) setSavedError('Saved tenders are temporarily unavailable. Check Firestore access, then reload.'); });
@@ -183,13 +184,13 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
       if (typeFilter === 'construction' && !isConstruction(t)) return false;
       if (stateFilter === 'open' && tenderStatus(t) !== 'Open') return false;
       if (province && !t.province.toLowerCase().includes(province.toLowerCase())) return false;
-      if (matchOnly && profileReady && matchTender(t, profile).score < 52) return false;
+      if (matchOnly && profileReady && (matchMap.get(t.id)?.score ?? 0) < 52) return false;
       return !q || [t.title, t.reference, t.buyer, t.province, t.description].some(s => s?.toLowerCase().includes(q));
     }).sort((a, b) => {
-      if (profileReady) { const difference = matchTender(b, profile).score - matchTender(a, profile).score; if (difference) return difference; }
+      if (profileReady) { const difference = (matchMap.get(b.id)?.score ?? 0) - (matchMap.get(a.id)?.score ?? 0); if (difference) return difference; }
       return (safeDate(a.closesAt)?.getTime() || Number.MAX_SAFE_INTEGER) - (safeDate(b.closesAt)?.getTime() || Number.MAX_SAFE_INTEGER);
     });
-  }, [tenders, typeFilter, stateFilter, search, province, matchOnly, profileReady, profile]);
+  }, [tenders, typeFilter, stateFilter, search, province, matchOnly, profileReady, profile, matchMap]);
   const relevantCount = tenders.filter(t => isConstruction(t) && tenderStatus(t) === 'Open').length;
   const profileCompleted = profileKeys.filter(k => profile[k]?.trim()).length;
   const profilePct = Math.round(profileCompleted / profileKeys.length * 100);
@@ -232,7 +233,8 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
     finally { setModelSaving(false); }
   };
   const upload = async (file: File | undefined) => {
-    if (!file || !db) return;
+    if (!file || !db || vaultError || vaultLoading) return;
+    let uploadedKey: string | null = null;
     setUploading(true); setNotice('');
     try {
       const typeByExtension: Record<string, string> = {
@@ -246,14 +248,21 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
       const signed = await api<{ url: string; id: string; key: string; name: string; type: string; size: number }>(user, '/api/documents', {
         method: 'POST', body: JSON.stringify({ name: file.name, type, size: file.size }) });
       const response = await fetch(signed.url, { method: 'PUT', headers: { 'Content-Type': signed.type }, body: file });
-      if (!response.ok) throw new Error('Upload failed. Configure CORS for the R2 bucket to allow your BUILDA domain.');
+      if (!response.ok) throw new Error('Upload failed. Check document storage settings and try again.');
+      uploadedKey = signed.key;
       await setDoc(doc(db, 'contractors', user.uid, 'documents', signed.id), {
         ownerId: user.uid, key: signed.key, name: signed.name, type: signed.type, size: file.size,
         category: fileCategory, expiresAt: fileExpiry, createdAt: serverTimestamp()
       });
       setNotice(file.name + ' uploaded to your private document vault.');
       if (uploadRef.current) uploadRef.current.value = '';
-    } catch (err) { setNotice(err instanceof Error ? err.message : 'Upload unsuccessful.'); }
+    } catch (err) {
+      if (uploadedKey) {
+        try { await api(user, '/api/documents?key=' + encodeURIComponent(uploadedKey), { method: 'DELETE' }); }
+        catch { /* server cleanup may require administrator review */ }
+      }
+      setNotice(err instanceof Error ? err.message : 'Upload unsuccessful.');
+    }
     finally { setUploading(false); }
   };
   const openFile = async (f: VaultFile) => {
@@ -319,7 +328,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
       <div className="bo-content">
         {notice && <div className="bo-toast" role="status"><CheckCircle2 size={17}/><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss"><X size={15}/></button></div>}
         {view === 'overview' && <>
-          {profileError && <div className="bo-inline-error" role="alert">{profileError} <button onClick={() => changeView('company')}>Open company profile</button></div>}
+          {profileError && <div className="bo-inline-error" role="alert">{profileError} <button onClick={() => window.location.reload()}>Retry connection</button></div>}
           <div className="bo-page-heading"><div><div className="bo-eyebrow"><span className="bo-live-dot"/> YOUR BUSINESS AT A GLANCE</div><h1>{greeting()}, {profile.contactPerson?.split(' ')[0] || 'builder'}<span className="bo-heading-dot">.</span></h1><p>Here’s what’s happening across your business workspace.</p></div><button className="bo-primary" onClick={() => changeView('tenders')}>Explore tenders <ArrowUpRight size={17}/></button></div>
           <div className="bo-hero"><div className="bo-hero-copy"><div className="bo-hero-kicker"><Sparkles size={16}/> MEET YOUR INTELLIGENT WORKSPACE</div><h2>Better opportunities.<br/><em>Built around your business.</em></h2><p>BUILDA uses your capabilities and service areas to bring promising notices forward, and explains what to verify before bidding.</p><button onClick={() => changeView('tenders')}>Open tender intelligence <ArrowRight size={16}/></button></div><div className="bo-hero-visual" aria-hidden="true"><div className="bo-ring bo-ring-one"/><div className="bo-ring bo-ring-two"/><div className="bo-visual-core"><Sparkles size={42}/></div><span>BUILDA / INTELLIGENCE</span></div></div>
           <div className="bo-metrics">
@@ -357,8 +366,8 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
             {view === 'tenders' && <div className="bo-table-footer"><span>Showing {filtered.length} matching records from {tenders.length} loaded releases. Search applies to loaded pages only.</span><button className="bo-outline" disabled={!more || fetchingMore || feedLoading} onClick={() => void loadTenders(feedPage + 1, false)}>{fetchingMore ? 'Loading…' : more ? 'Load more releases' : 'End of loaded results'} <ArrowRight size={15}/></button></div>}
           </section>
         </>}
-        {view === 'documents' && <><div className="bo-page-heading"><div><div className="bo-eyebrow"><LockKeyhole size={13}/> PRIVATE BUSINESS STORAGE</div><h1>Document vault<span className="bo-heading-dot">.</span></h1><p>One secure place for your important company and compliance files.</p></div><button className="bo-primary" onClick={() => uploadRef.current?.click()} disabled={uploading}><CloudUpload size={17}/>{uploading ? 'Uploading…' : 'Upload a document'}</button></div>
-          {vaultError && <div className="bo-inline-error" role="alert">{vaultError} <button onClick={() => window.location.reload()}>Retry</button></div>}<section className="bo-panel bo-upload-panel"><div><IconWrap tone="blue"><CloudUpload size={24}/></IconWrap><h3>Your documents, intelligently organised.</h3><p>Keep your CSD, CIDB, tax and project documentation in one private space. Maximum 15 MB per file.</p></div><div className="bo-upload-inputs"><label>Document category<select value={fileCategory} onChange={e => setFileCategory(e.target.value)}>{docCategories.map(c => <option key={c}>{c}</option>)}</select></label><label>Expiry date (optional)<input type="date" value={fileExpiry} onChange={e => setFileExpiry(e.target.value)}/></label><input ref={uploadRef} type="file" className="bo-hidden-input" accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx" onChange={e => void upload(e.target.files?.[0])}/><button className="bo-outline" disabled={uploading} onClick={() => uploadRef.current?.click()}><CloudUpload size={17}/> Select a file</button></div></section>
+        {view === 'documents' && <><div className="bo-page-heading"><div><div className="bo-eyebrow"><LockKeyhole size={13}/> PRIVATE BUSINESS STORAGE</div><h1>Document vault<span className="bo-heading-dot">.</span></h1><p>One secure place for your important company and compliance files.</p></div><button className="bo-primary" onClick={() => uploadRef.current?.click()} disabled={uploading || vaultLoading || Boolean(vaultError)}><CloudUpload size={17}/>{uploading ? 'Uploading…' : vaultLoading ? 'Connecting…' : 'Upload a document'}</button></div>
+          {vaultError && <div className="bo-inline-error" role="alert">{vaultError} <button onClick={() => window.location.reload()}>Retry</button></div>}<section className="bo-panel bo-upload-panel"><div><IconWrap tone="blue"><CloudUpload size={24}/></IconWrap><h3>Your documents, intelligently organised.</h3><p>Keep your CSD, CIDB, tax and project documentation in one private space. Maximum 15 MB per file.</p></div><div className="bo-upload-inputs"><label>Document category<select value={fileCategory} onChange={e => setFileCategory(e.target.value)}>{docCategories.map(c => <option key={c}>{c}</option>)}</select></label><label>Expiry date (optional)<input type="date" value={fileExpiry} onChange={e => setFileExpiry(e.target.value)}/></label><input ref={uploadRef} type="file" className="bo-hidden-input" accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx" onChange={e => void upload(e.target.files?.[0])}/><button className="bo-outline" disabled={uploading || vaultLoading || Boolean(vaultError)} onClick={() => uploadRef.current?.click()}><CloudUpload size={17}/> Select a file</button></div></section>
           {!vaultError && <section className="bo-panel bo-files-panel"><div className="bo-table-top"><div><div className="bo-small-kicker">ENCRYPTED CLOUD STORAGE</div><h3>Company documents</h3></div><span className="bo-record-count">{files.length} files</span></div>{files.length ? <div className="bo-file-list">{files.map(f => <div className="bo-file" key={f.id}><IconWrap tone="blue"><FileText size={21}/></IconWrap><div><strong>{f.name}</strong><small>{f.category} · {formatSize(f.size)}{f.expiresAt ? ' · Expires ' + formattedDate(f.expiresAt) : ''}</small></div><button title="Open document" aria-label={'Open ' + f.name} onClick={() => void openFile(f)}><ArrowDownToLine size={18}/></button><button title="Delete document" aria-label={'Delete ' + f.name} onClick={() => void removeFile(f)}><Trash2 size={17}/></button></div>)}</div> : <Empty icon={<FolderOpen size={25}/>} title="A fresh start for your document vault" body="Upload your first document to keep it safe and ready whenever you need it." action={<button className="bo-link" onClick={() => uploadRef.current?.click()}>Upload a document <ArrowRight size={15}/></button>}/>}</section>}
         </>}
         {view === 'company' && <><div className="bo-page-heading"><div><div className="bo-eyebrow"><Building2 size={14}/> COMPANY IDENTITY</div><h1>Company profile<span className="bo-heading-dot">.</span></h1><p>Help BUILDA understand your services, experience and where you work.</p></div><span className="bo-private"><LockKeyhole size={14}/> Private company record</span></div>

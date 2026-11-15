@@ -15,6 +15,15 @@ const provinces=['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Free S
 function App(){
  const [page,setPage]=useState<Page>(()=>window.location.pathname.startsWith('/app')?'dashboard':window.location.pathname==='/login'?'login':window.location.pathname==='/register'?'register':'home'), [menu,setMenu]=useState(false), [user,setUser]=useState<User|null>(null), [message,setMessage]=useState(''), [profile,setProfile]=useState<Record<string,string>>({}), [loading,setLoading]=useState(false), [dashTab,setDashTab]=useState<'overview'|'tenders'|'approvals'>('overview');
  useEffect(()=>{if(!auth)return;return onAuthStateChanged(auth,u=>{setProfile({});setUser(u);});},[]);
+  useEffect(() => {
+    const onBack = () => {
+      const path = window.location.pathname;
+      setPage(path.startsWith('/app') ? 'dashboard' : path === '/login' ? 'login' : path === '/register' ? 'register' : 'home');
+      setMenu(false);
+    };
+    window.addEventListener('popstate', onBack);
+    return () => window.removeEventListener('popstate', onBack);
+  }, []);
  useEffect(()=>{setMessage('');window.scrollTo(0,0);setMenu(false);},[page]);
 
  const go=(p:Page)=>{setPage(p);window.history.pushState(null,'',p==='dashboard'?'/app':p==='company'?'/app/company':p==='login'?'/login':p==='register'?'/register':'/');};

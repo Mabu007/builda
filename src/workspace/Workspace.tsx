@@ -213,14 +213,29 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
     finally { setUploading(false); }
   };
   const openFile = async (f: VaultFile) => {
-    try { const result = await api<{ url: string }>(user, '/api/documents?key=' + encodeURIComponent(f.key)); window.open(result.url, '_blank', 'noopener,noreferrer'); }
-    catch { setNotice('Unable to open the file. Check document storage configuration.'); }
+    // Open within the original click event; browsers often block a popup opened after an await.
+    const tab = window.open('about:blank', '_blank');
+    if (tab) tab.opener = null;
+    try {
+      const result = await api<{ url: string }>(user, '/api/documents?key=' + encodeURIComponent(f.key));
+      if (tab && !tab.closed) tab.location.replace(result.url);
+      else window.location.assign(result.url);
+    } catch {
+      if (tab && !tab.closed) tab.close();
+      setNotice('Unable to open the file. Check document storage configuration.');
+    }
   };
   const removeFile = async (f: VaultFile) => {
     if (!window.confirm('Permanently delete ' + f.name + '?') || !db) return;
     try { await api(user, '/api/documents?key=' + encodeURIComponent(f.key), { method: 'DELETE' }); await deleteDoc(doc(db, 'contractors', user.uid, 'documents', f.id)); setNotice('Document deleted.'); }
     catch { setNotice('Unable to delete document. Please retry.'); }
   };
+  useEffect(() => {
+    if (!selected) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setSelected(null); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [selected]);
   const leave = async () => { try { if (auth) await signOut(auth); onExit(); } catch { setNotice('Could not sign out. Try again.'); } };
   const nav: { label: string; items: { id: View; label: string; icon: React.ReactNode }[] }[] = [
     { label: 'WORKSPACE', items: [

@@ -64,3 +64,12 @@ export async function completeAI({ model = DEFAULT_MODEL, messages, maxTokens = 
   }
   throw lastError || Object.assign(new Error('AI is temporarily unavailable.'), { status: 502 });
 }
+
+export function respondAIError(res, error) {
+  const safeCodes = new Set(['missing_key','timeout','empty_response','provider_error','budget_exhausted','rate_limit_exceeded','payment_required','provider_unavailable','provider_overloaded','invalid_model','invalid_request','key_invalid','unauthorized','forbidden']);
+  if (safeCodes.has(String(error?.code)) || Number(error?.upstreamStatus)) {
+    return res.status(Number(error.status) || 502).json({ error: String(error.message).slice(0, 240), code: String(error.code || 'provider_error').slice(0, 80) });
+  }
+  const status = Number(error?.status);
+  return res.status([400,401,429].includes(status) ? status : 500).json({ error: [400,401,429].includes(status) ? String(error.message).slice(0, 240) : 'The AI service is temporarily unavailable.' });
+}

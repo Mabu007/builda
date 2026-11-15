@@ -25,15 +25,15 @@ const suggested = [
   { title: 'Prepare an application checklist', text: 'Create a practical application preparation checklist for my organisation, identifying what still needs verification.' },
 ];
 const viewTime = (s?: number) => s ? new Date(s * 1000).toLocaleDateString('en-ZA', { month:'short',day:'numeric' }) : 'New';
-const inlineFormatting = (line: string) => line.split(/(\\*\\*[^*]+\\*\\*)/g).map((segment, index) =>
+const inlineFormatting = (line: string) => line.split(/(\*\*[^*]+\*\*)/g).map((segment, index) =>
   segment.startsWith('**') && segment.endsWith('**') ? <strong key={index}>{segment.slice(2,-2)}</strong> : <React.Fragment key={index}>{segment}</React.Fragment>);
 function renderAssistantText(text: string) {
-  return text.split(/\\n/).map((line, i) => {
+  return text.split(/\n/).map((line, i) => {
     const clean = line.trim();
     if (!clean) return <div className="op-chat-line-space" key={i}/>;
-    const title = /^(#{1,3}\\s+)(.*)/.exec(clean);
+    const title = /^(#{1,3}\s+)(.*)/.exec(clean);
     if (title) return <div className="op-chat-line-heading" key={i}>{inlineFormatting(title[2])}</div>;
-    const bullet = /^(?:[-•*]\\s+|\\d+[.)]\\s+)(.*)/.exec(clean);
+    const bullet = /^(?:[-•*]\s+|\d+[.)]\s+)(.*)/.exec(clean);
     if (bullet) return <div className="op-chat-line-bullet" key={i}><span>•</span><span>{inlineFormatting(bullet[1])}</span></div>;
     return <div className="op-chat-line-text" key={i}>{inlineFormatting(clean)}</div>;
   });

@@ -85,3 +85,12 @@ Vite local dev alone does not run Vercel Node functions in `/api`. To test API r
 - [ ] Production merge and domain assignment only after these checks.
 
 Do not claim the app is ready for public tender administration until the external services and cross-user security have been tested.
+
+
+## November 2026 dashboard fixes
+
+- Company-aware opportunity ranking is **explainable heuristic matching** over the currently loaded API batch, using stated services, location and CIDB. It is **not** an eligibility determination or an exhaustive search. Open a tender and request AI analysis for a model-generated assessment with the business context.
+- PWA: `npm run build` generates branded 192/512px icons and `favicon.ico` automatically; `public/manifest.webmanifest` declares standalone app and `public/sw.js` caches **public static shell only**. Never cache authenticated APIs or business documents. Install panel hides after install and in standalone display mode.
+- Firebase permissions: Vercel does **not** publish `firestore.rules`. Ensure Firestore database exists and production web config targets the same project as auth. Review and deploy with `firebase deploy --only firestore:rules --project <YOUR_FIREBASE_PROJECT_ID>` from a machine authenticated to the project. Existing contractor records without `ownerId` can be updated by their matching UID, after which ownership is enforced.
+- R2 upload still requires CORS permitting `https://builda-five.vercel.app`, method PUT, header Content-Type and signed URL GET access. Verify actual document round trip before real compliance files.
+- The frontend uses localStorage only for the theme, not for private business data. If Firestore is unavailable, show an explicit error rather than a misleading empty vault.

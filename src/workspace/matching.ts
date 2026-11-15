@@ -16,7 +16,7 @@ const clusters: { name: string; phrases: string[] }[] = [
   { name: 'painting', phrases: ['painting', 'coating', 'paint work'] },
   { name: 'landscaping', phrases: ['landscaping', 'gardening', 'grounds maintenance', 'vegetation clearing'] },
   { name: 'mechanical & HVAC', phrases: ['mechanical', 'hvac', 'air conditioning', 'ventilation', 'plant maintenance'] },
-  { name: 'IT & software', phrases: ['information technology', 'ict', 'computer', 'software', 'web development', 'cybersecurity', 'networking', 'cloud computing', 'digital services'] },
+  { name: 'IT & software', phrases: ['information technology', 'it services', 'it support', 'ict', 'computer', 'software', 'web development', 'cybersecurity', 'networking', 'cloud computing', 'digital services'] },
   { name: 'security', phrases: ['security', 'guarding', 'surveillance', 'access control', 'cctv'] },
   { name: 'cleaning', phrases: ['cleaning', 'hygiene', 'janitorial', 'sanitation services', 'waste collection', 'pest control'] },
   { name: 'transport & logistics', phrases: ['logistics', 'freight', 'delivery', 'transport', 'courier', 'distribution', 'fleet management'] },
@@ -54,7 +54,8 @@ export function matchTender(tender: TenderCandidate, profile: CompanyDetails) {
   const companyGroups = clustersFor(profileText);
   const tenderGroups = clustersFor(noticeText);
   const sharedGroups = tenderGroups.filter(group => companyGroups.includes(group));
-  const commonTerms = keywords([profile.category, profile.services, profile.description].filter(Boolean).join(' ')).filter(word => keywords(noticeText).includes(word));
+  const noticeWords = new Set(keywords(noticeText));
+  const commonTerms = keywords([profile.category, profile.services, profile.description].filter(Boolean).join(' ')).filter(word => noticeWords.has(word));
   const reasons: string[] = [];
   let score = 10;
   let hasServiceFit = false;

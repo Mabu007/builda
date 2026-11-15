@@ -25,3 +25,75 @@
 @media(max-width:790px){.bo-sidebar{position:fixed;left:0;top:0;bottom:0;width:min(290px,85vw);height:100dvh;transform:translateX(-100%);transition:transform .23s ease;z-index:52}.bo-sidebar-open{transform:translateX(0)}.bo-scrim{display:block;position:fixed;inset:0;background:#101d1c9e;z-index:51;border:0}.bo-close-nav{display:block;color:#aebdb7;background:transparent;margin-left:auto;padding:5px}.bo-mobile-menu{display:grid;place-items:center}.bo-topbar{height:63px;padding:0 19px}.bo-top-right{gap:8px}.bo-command-search{min-width:auto;padding:9px}.bo-command-search span{display:none}.bo-top-divider{display:none}.bo-content{padding:27px 18px}.bo-page-heading{align-items:flex-start}.bo-page-heading h1{font-size:29px}.bo-hero{grid-template-columns:1fr}.bo-hero-visual{display:none}.bo-hero-copy{padding:31px}.bo-metrics{gap:10px}.bo-source-note{flex-direction:column;align-items:start}.bo-footer>span:last-child{display:none}}
 @media(max-width:560px){.bo-top-left{gap:6px}.bo-breadcrumb{display:none}.bo-page-heading{display:block}.bo-page-heading>.bo-primary,.bo-page-heading>.bo-outline{margin-top:18px}.bo-page-heading p{font-size:12px}.bo-hero-copy h2{font-size:29px}.bo-metrics{grid-template-columns:1fr 1fr;gap:8px}.bo-metric{padding:14px}.bo-metric>div:first-child>span:first-child{font-size:10px}.bo-metric .bo-icon{height:29px;width:29px}.bo-metric .bo-icon svg{width:16px}.bo-metric>strong{font-size:25px}.bo-metric>small{font-size:9px;min-height:41px}.bo-metric-link{margin-top:8px}.bo-panel-title{padding:18px}.bo-preview-list{padding:0 7px}.bo-preview-right{display:none}.bo-preview-row{padding:14px 8px}.bo-attention-list{padding:0 18px}.bo-data-banner{align-items:start}.bo-data-glyph{display:none}.bo-data-banner a{align-self:start}.bo-table-top{padding:19px}.bo-record-count{white-space:normal}.bo-filters{padding:0 16px 16px}.bo-filter-select{flex:1 1 42%}.bo-filter-select select{min-width:0;flex:1}.bo-table-footer{align-items:flex-start;flex-direction:column;padding:17px}.bo-table-footer .bo-outline{width:100%}.bo-form-row,.bo-profile-aside{grid-template-columns:1fr}.bo-company-form{padding:20px}.bo-form-footer{flex-direction:column;align-items:flex-start}.bo-form-footer button{width:100%}.bo-upload-inputs{width:100%}.bo-upload-inputs label{flex:1}.bo-file{padding:14px;gap:9px}.bo-file .bo-icon{height:32px;width:32px}.bo-setting-card{padding:18px;gap:12px}.bo-dialog-top{padding:17px}.bo-dialog-body{padding:19px}.bo-dialog-body h2{font-size:20px}.bo-dialog-actions{padding:14px;flex-wrap:wrap}.bo-dialog-actions>a,.bo-dialog-actions>button{flex:1}.bo-detail-grid{gap:10px}}
 @media(prefers-reduced-motion:reduce){.bo-shell *, .bo-shell *:before,.bo-shell *:after{animation:none!important;transition:none!important}}
+/* App installation: replaces the redundant promotional sidebar card */
+.bo-install-tile{border:1px solid #405e5b;background:linear-gradient(147deg,#284642,#1b3438);border-radius:15px;padding:17px;box-shadow:inset 0 1px 0 #ffffff16}
+.bo-install-icon{width:34px;height:34px;border-radius:10px;background:#ffffff17;color:#efd0a6;display:grid;place-items:center;margin-bottom:13px}
+.bo-install-tile strong{display:block;color:#f2f3eb;font:750 14px/1.35 Manrope}
+.bo-install-tile p{margin:7px 0 16px;font-size:11px;color:#a9c2b8;line-height:1.6}
+.bo-install-tile button{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;color:#1d3030;background:#e8d2ad;border-radius:9px;font-weight:800;font-size:11px;padding:12px}
+.bo-install-tile button:hover{background:#f3ddb9}
+.bo-theme-button{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:#f1f4f2;color:#546c61}
+.bo-theme-button:hover{background:#e4ebea}
+.bo-theme-options{display:flex;gap:9px;flex-wrap:wrap}
+.bo-theme-options button{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #e0e8e2!important;border-radius:10px;background:#f7f9f6;color:#596c60;font-size:12px;font-weight:700;padding:12px 23px}
+.bo-theme-options button.active{background:#e8f3ea;color:#36684c;border-color:#8cbaa0!important}
+.bo-match-explanation{display:flex;align-items:center;gap:13px;margin:0 24px 18px;padding:14px 16px;border-radius:11px;background:#f0f6f1;border:1px solid #dfeae1;color:#537461;font-size:11px;line-height:1.55}
+.bo-match-explanation>span{flex:1}.bo-match-explanation strong{color:#315a43}.bo-match-explanation button{display:flex;align-items:center;gap:6px;white-space:nowrap;color:#2f7559;background:transparent;font-size:11px;font-weight:800;padding:4px}
+.bo-match-tag{display:inline-flex;align-items:center;gap:5px;max-width:100%;border-radius:5px;padding:4px 7px;margin-top:7px;font-size:9px;font-weight:800;background:#f1f3f2;color:#718078;white-space:nowrap;vertical-align:middle}
+.bo-match-good{background:#e6f4e9;color:#347a52}.bo-match-maybe{background:#fff5e4;color:#987044}
+.bo-dialog-match{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:#f3f7f4;padding:12px 14px;border-radius:9px;margin-bottom:16px;font-size:11px;color:#607e6c;line-height:1.6}
+.bo-dialog-match>span:nth-child(2){flex:1 1 250px}.bo-dialog-match small{width:100%;color:#a36f42;font-weight:700}
+
+/* A fully supported dark workspace, not an inverted screenshot */
+.bo-theme-dark{--bo-ink:#e3ece8;--bo-muted:#97aaa4;--bo-line:#293b42;--bo-accent:#dfb77e;background:#10191e;color:#e3ece8;color-scheme:dark}
+.bo-theme-dark .bo-topbar{background:#142127;border-bottom-color:#2a3a42}
+.bo-theme-dark .bo-breadcrumb,.bo-theme-dark .bo-top-left>svg{color:#7f979b}
+.bo-theme-dark .bo-command-search,.bo-theme-dark .bo-theme-button{background:#203037;color:#c8d8d2;border-color:#30444a!important}
+.bo-theme-dark .bo-command-search:hover,.bo-theme-dark .bo-theme-button:hover{background:#2d4148}
+.bo-theme-dark .bo-top-divider{background:#30424b}
+.bo-theme-dark .bo-page-heading h1,.bo-theme-dark .bo-metric>strong,.bo-theme-dark .bo-panel-title h3,.bo-theme-dark .bo-table-top h3,.bo-theme-dark .bo-tender-name,.bo-theme-dark .bo-dialog-body h2,.bo-theme-dark .bo-setting-card h3,.bo-theme-dark .bo-profile-score h3{color:#e7efea}
+.bo-theme-dark p,.bo-theme-dark .bo-page-heading p{color:#97aaa4}
+.bo-theme-dark .bo-panel,.bo-theme-dark .bo-metric,.bo-theme-dark .bo-dialog,.bo-theme-dark .bo-dialog-actions{background:#17252c;border-color:#2e3d43!important;box-shadow:0 4px 25px #080f1466}
+.bo-theme-dark .bo-metric>div:first-child>span:first-child,.bo-theme-dark .bo-metric>small,.bo-theme-dark .bo-subline,.bo-theme-dark .bo-table-footer>span{color:#96aba6}
+.bo-theme-dark .bo-panel-title,.bo-theme-dark .bo-table-footer,.bo-theme-dark .bo-dialog-actions,.bo-theme-dark .bo-dialog-top,.bo-theme-dark .bo-file,.bo-theme-dark .bo-form-footer,.bo-theme-dark .bo-attention-foot{border-color:#2f4248}
+.bo-theme-dark .bo-attention-list>button{border-bottom-color:#2f4248!important}
+.bo-theme-dark .bo-attention-list strong,.bo-theme-dark .bo-buyer,.bo-theme-dark .bo-date,.bo-theme-dark .bo-detail-grid>div strong,.bo-theme-dark .bo-file strong{color:#d6e4dc}
+.bo-theme-dark .bo-attention-list small,.bo-theme-dark .bo-file small{color:#8fa69d}
+.bo-theme-dark .bo-attention-symbol,.bo-theme-dark .bo-setting-icon,.bo-theme-dark .bo-empty-icon{background:#263b39;color:#9fc3b0;border-color:#35524a}
+.bo-theme-dark .bo-record-count{background:#25373c;color:#b5c6bb}
+.bo-theme-dark .bo-table th{background:#1c2e34;color:#94ada6;border-color:#2e4248}
+.bo-theme-dark .bo-table td{border-color:#2d4047}
+.bo-theme-dark .bo-table tbody tr:hover,.bo-theme-dark .bo-preview-row:hover{background:#253840}
+.bo-theme-dark .bo-search-box,.bo-theme-dark .bo-filter-select,.bo-theme-dark .bo-company-form input,.bo-theme-dark .bo-company-form textarea,.bo-theme-dark .bo-company-form select,.bo-theme-dark .bo-setting-card select,.bo-theme-dark .bo-upload-inputs input,.bo-theme-dark .bo-upload-inputs select{background:#203139;border-color:#324a4a;color:#d9e7dd}
+.bo-theme-dark .bo-search-box input,.bo-theme-dark .bo-filter-select select{color:#deebe3}
+.bo-theme-dark input::placeholder,.bo-theme-dark textarea::placeholder{color:#77928d}
+.bo-theme-dark .bo-company-form label,.bo-theme-dark .bo-setting-card label,.bo-theme-dark .bo-upload-inputs label{color:#adc3b5}
+.bo-theme-dark .bo-upload-panel,.bo-theme-dark .bo-ai-explainer{background:linear-gradient(130deg,#1d3132,#17262b);border-color:#314946}
+.bo-theme-dark .bo-ai-header strong,.bo-theme-dark .bo-ai-answer{color:#d4e7d7}
+.bo-theme-dark .bo-ai-answer{background:#112025;border-color:#2d443d}
+.bo-theme-dark .bo-doc-links a{background:#273b36;color:#c4e2d0}
+.bo-theme-dark .bo-detail-grid{border-color:#334942}
+.bo-theme-dark .bo-dialog-desc,.bo-theme-dark .bo-dialog-meta,.bo-theme-dark .bo-detail-grid>div span{color:#a3bbb1}
+.bo-theme-dark .bo-icon-button{background:#2a4142;color:#d4e0d6}
+.bo-theme-dark .bo-empty strong{color:#bfd6c7}
+.bo-theme-dark .bo-match-explanation,.bo-theme-dark .bo-dialog-match{background:#233b38;border-color:#35564d;color:#accaba}
+.bo-theme-dark .bo-match-explanation strong{color:#d5ead6}
+.bo-theme-dark .bo-match-explanation button{color:#b0dcba}
+.bo-theme-dark .bo-match-tag{background:#2b393b;color:#b0c0b8}
+.bo-theme-dark .bo-match-good{background:#1d4c39;color:#a4e8bb}
+.bo-theme-dark .bo-match-maybe{background:#55422c;color:#f0cf9d}
+.bo-theme-dark .bo-theme-options button{background:#22363a;color:#bfd4c9;border-color:#3a514b!important}
+.bo-theme-dark .bo-theme-options button.active{background:#295041;border-color:#81bb91!important;color:#c0f0ce}
+.bo-theme-dark .bo-inline-error{background:#4b322b;color:#ffcfb3}
+.bo-theme-dark .bo-inline-error button{color:#ffcfb3}
+.bo-theme-dark .bo-skeleton{background:linear-gradient(100deg,#1c3035 30%,#30464c 50%,#1c3035 70%);background-size:200% 100%}
+.bo-theme-dark .bo-private{background:#233b34;color:#bedfc5;border-color:#345441}
+.bo-theme-dark .bo-status-open{background:#234636;color:#b5e7c7}
+.bo-theme-dark .bo-status-closed{background:#303f43;color:#b8c5c1}
+.bo-theme-dark .bo-status-verify{background:#4a3d29;color:#f6d29a}
+.bo-theme-dark .bo-primary{background:#d7b384;color:#172c2c}
+.bo-theme-dark .bo-outline{border-color:#3e5652!important;color:#d0e4d8;background:#1f3235}
+.bo-theme-dark .bo-outline:hover{background:#2a4142}
+@media(max-width:790px){.bo-match-explanation{align-items:flex-start;flex-wrap:wrap}.bo-match-explanation button{margin-left:28px}}
+@media(max-width:560px){.bo-theme-button{width:32px;height:32px;flex:none}.bo-match-explanation{margin:0 12px 14px}.bo-dialog-match{align-items:flex-start}}
+@media(display-mode:standalone){.bo-install-tile{display:none!important}}

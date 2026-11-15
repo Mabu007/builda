@@ -185,3 +185,30 @@
  .bo-company-form input,.bo-company-form textarea,.bo-company-form select,
  .bo-setting-card select,.bo-search-box input,.bo-filter-select select{font-size:16px}
 }
+
+
+/* OPPOTRON identity and assistant workspace */
+.bo-brand{gap:9px;padding:1px 8px 30px;min-width:0}
+.bo-brand-mark{flex:none}
+.bo-brand-word{font-size:19px!important;letter-spacing:-.065em!important;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.bo-brand-word small{font-size:7px!important;letter-spacing:.09em!important;margin-top:5px;white-space:normal;line-height:1.5!important}
+.bo-sidebar .bo-nav-item{font-size:11.5px}
+.bo-npo-sources{display:flex;align-items:center;gap:15px;padding:20px 22px;border:1px solid #e1e6de;border-radius:12px;background:#f5f8f1;margin:0 0 18px}
+.bo-npo-icon{width:43px;height:43px;display:grid;place-items:center;flex:none;border-radius:11px;background:#e5efe1;color:#5f8970}
+.bo-npo-sources>div{flex:1;min-width:0}
+.bo-npo-sources strong{font-size:12px;color:#375c43}
+.bo-npo-sources p{font-size:11px;line-height:1.7;margin-top:5px;color:#879a84}
+.bo-npo-sources button{display:flex;align-items:center;gap:7px;white-space:nowrap;background:#2d503e;color:#fff;font-size:11px;font-weight:800;padding:11px 14px;border-radius:9px}
+.bo-npo-sources button:hover{background:#426950}
+.bo-theme-dark .bo-npo-sources{background:#223833;border-color:#344f40}
+.bo-theme-dark .bo-npo-icon{background:#305445;color:#c3e3be}
+.bo-theme-dark .bo-npo-sources strong{color:#d8e8d9}
+.bo-theme-dark .bo-npo-sources p{color:#aac1ad}
+.bo-theme-dark .bo-npo-sources button{background:#d4b889;color:#223b2a}
+.bo-page-heading button,.bo-theme-options button,.bo-npo-sources button{transition:background .18s ease}
+.bo-theme-light .bo-brand-word{color:#244737}
+.bo-theme-dark .bo-brand-word{color:#eef5e8}
+.bo-theme-light .bo-sidebar{background:#f1f5f0}
+@media(max-width:1080px){.bo-brand-word{font-size:17px!important}}
+@media(max-width:790px){.bo-brand-word{font-size:20px!important}.bo-npo-sources{align-items:flex-start;flex-wrap:wrap}.bo-npo-sources button{margin-left:56px}}
+@media(max-width:560px){.bo-npo-sources{padding:14px}.bo-npo-icon{height:36px;width:36px}.bo-npo-sources button{margin-left:0;width:100%;justify-content:center}.bo-chat-viewport{padding:0}.bo-dialog-actions{gap:8px}.bo-dialog-actions>button,.bo-dialog-actions>a{flex:1 1 auto}}

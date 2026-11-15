@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     if (calls.size > 2000) calls.clear();
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     const model = strip(body.model || 'openai/gpt-4o-mini', 120);
-    if (!/^[\\w.:-]+\\/[\\w.:-]+$/.test(model)) throw Object.assign(new Error('Choose a valid model in Settings.'), { status: 400 });
+    if (!model.includes('/') || model.length > 120) throw Object.assign(new Error('Choose a valid model in Settings.'), { status: 400 });
     if (!(await allowedModels()).some(option => option.id === model)) {
       throw Object.assign(new Error('This model is not in the approved affordable catalogue. Choose another in Settings.'), { status: 400 });
     }

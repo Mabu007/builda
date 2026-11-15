@@ -1,103 +1,69 @@
-# BUILDA — Contractor OS
+# OPPOTRON — Opportunity Intelligence, Powered by AI
 
-BUILDA is a contractor-first operations workspace for South African construction companies. The landing page introduces the product; the private app brings tender intelligence, business information and compliance documents into one interface.
+**Your business. The right opportunities. Automatically.**
 
-## Implemented in this branch
+OPPOTRON is the evolution of BUILDA into a multi-sector SaaS opportunity-intelligence workspace for **private companies and NPOs**. Its long-term ambition is an intelligent opportunity administration department: profile, documents, source discovery, matching, preparation, application tracking and human-approved automation.
 
-- Premium responsive dashboard: meaningful business-readiness and document counts, saved tenders and recent published opportunities; no fabricated analytics.
-- Live government-data proxy: National Treasury's public OCDS /api/OCDSReleases endpoint, paginated 250 at a time and filtered by publication date (60 days by default). Heuristic construction classification, source attribution, status, government document links, search and saved opportunities. Data is only a subset: do not treat it as exhaustive, verified, or proof of eligibility.
-- AI: on-demand plain-language tender interpretation via server-side OpenRouter. Model selection in Settings; models limited by current catalogue price and a modest call-rate guard. AI never submits bids or claims a firm is eligible.
-- Private R2 document vault: server-issued 5-minute signed upload, download and delete URLs. File metadata, optional expiry and category live in per-contractor Firestore subcollections. Files limited to 15 MB and selected PDF/images/DOCX/XLSX formats.
-- Firebase Auth and Firestore: existing email/password auth, editable private company profile, saved tender list and AI settings. Rules in `firestore.rules`.
-- Scoped server APIs: user-signed Firebase ID tokens are checked cryptographically before access. OpenRouter and R2 secrets remain server-side.
+The actual shipped MVP must be described accurately. Some capabilities are currently implemented; others are explicitly planned.
 
-### What is **not** included
+## Implemented now
 
-Automatic tender bidding, procurement portal submissions, source PDF reading, qualification verification, bulk government tender indexing, procurement amendments/awards tracking, human approvals, automated agents, production usage metering and email notifications are not implemented. This is an initial tender intelligence and compliance workspace, not a turnkey tender service. No subscription billing.
+- **React + Vite workspace** and premium public SaaS landing website branded as OPPOTRON.
+- **Firebase Authentication** (email/password), plus a first-sign-in organisation selector: **Private Company** or **NPO**. The selection is saved to a private Firestore profile and updates the profile terminology. Organisation profiles include sector, services/mission, operating areas, programmes/projects, contact information and goals.
+- **Public procurement data** from National Treasury's OCDS release feed, fetched by an authenticated server API (`/api/tenders`), paginated and shown as recent releases. The feed is NOT an exhaustive government tender database. Company-aware keyword/category, geography and CIDB relevance ranking uses the fields supplied; never treats a match as verified eligibility.
+- **Document vault** on R2 with per-user signed URLs and Firestore metadata. Multiple files per upload batch, required display names, optional descriptions/categories/expiry dates, and document metadata details modal. **No OCR/text extraction is implemented yet.** Files are private.
+- **OPPOTRON AI admin assistant**, a full conversation workspace with new chats, private Firestore chat/message history, delete, suggested prompts, message composer, and a floating chat button. Users can ask questions about procurement notices, grant/CSI calls they provide, application checklists, missing details and general administration. A tender's details can be passed directly into a new assistant conversation.
+- **OpenRouter AI** through server-only credentials; the free automatic model (`openrouter/free`) is the default, low-cost model selection is available in Settings, and approved selected models can fall back to a free model if the paid model fails. API errors distinguish missing/invalid keys, insufficient credits, rate limits, timeouts and provider outages. These safeguards cannot guarantee service while upstream is unavailable.
+- Responsive desktop/mobile dashboard with light/dark themes.
 
-## Setup: Firebase
+## Planned — NOT yet implemented
 
-1. Create/confirm a Firebase project, register the web app, enable **Authentication > Email/Password** and create Firestore in production mode.
-2. Set the public `VITE_FIREBASE_*` fields in **Vercel > Project > Settings > Environment Variables** for the environments where you run the app. These are public Firebase web-app config values (not Admin SDK private keys).
-3. Deploy the rules from the root of the repository, after authenticating with Firebase CLI and selecting the correct Firebase project:
-   ```bash
-   npx firebase-tools use YOUR_FIREBASE_PROJECT_ID
-   npx firebase-tools deploy --only firestore:rules
-   ```
-   The repository's `firebase.json` points to `firestore.rules`. **A Vercel deploy does not automatically deploy Firestore rules.** Verify with one normal contractor user and ensure that another user cannot access their documents or profile.
-4. Confirm Firebase **Authorized domains** include the BUILDA production domain and any preview domains used for authentication.
+- Continuous, verified CSI/grant and private-procurement source aggregation.
+- OCR, document text extraction, automatic compliance/eligibility validation.
+- Full application drafting across uploaded documents, portal submissions, application-status tracking, monitoring, automated follow-ups, browser automation or award predictions.
+- Subscription billing and optional managed services.
 
-## Setup: Cloudflare R2
+The NPO mode currently adapts the profile and assistant, but the live listing is still the **public OCDS procurement feed**. The app tells users that CSI/grant ingestion is coming; never show fictitious grant matches.
 
-Create a private bucket, create a scoped R2 API token with object read/write permissions for **only this bucket**, and configure the **server-side** environment variables `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` on Vercel.
+## Setup
 
-Configure the R2 bucket's CORS policy for allowed BUILDA website origins. At minimum, allow `PUT` from the exact Vercel deployment origin(s), with `Content-Type` as an allowed header. For example:
+### Firebase
 
-```json
-[
-  {
-    "AllowedOrigins": ["https://builda-five.vercel.app"],
-    "AllowedMethods": ["GET", "HEAD", "PUT"],
-    "AllowedHeaders": ["Content-Type"],
-    "ExposeHeaders": ["ETag"],
-    "MaxAgeSeconds": 3600
-  }
-]
-```
+1. Set up Firebase Authentication (**Email/Password**) and a Firestore database on the same project.
+2. Set `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID` in Vercel.
+3. **Publish `firestore.rules` manually** under **Firebase Console → Firestore Database → Rules → Publish**, or run `npx firebase-tools deploy --only firestore:rules --project YOUR_PROJECT_ID`. Vercel does **not** deploy Firestore rules.
+4. The new rules add `organizationType` on organisation profiles, and private `contractors/{uid}/chats/{chatId}` and `messages/{messageId}` paths. The assistant cannot save chat history if these rules have not been published.
 
-Add only trusted preview origins as needed. Do not expose the bucket publicly; do not place R2 credentials in browser-visible `VITE_` variables. Uploaded metadata is recorded in Firestore after a successful R2 upload. Client/browser upload limits alone do not enforce storage quotas; harden server-side usage controls before opening registration broadly. Check for orphaned objects and content-type/content-length abuse before accepting sensitive files.
+### OpenRouter
 
-## Setup: OpenRouter
+- Set `OPENROUTER_API_KEY` as a **server-side** Vercel environment variable for production/preview.
+- Default `openrouter/free` is a free chat-model router; a valid API key and available rate-limit quota are still necessary.
+- Check network status and the displayed AI error. HTTP 401 means invalid key; HTTP 402 means billing/credit cap; HTTP 429 rate limiting; HTTP 502/503 provider availability. Server functions report a safe diagnostic error without disclosing API keys or private prompt content in logs.
+- A request may fall back to free routing, never automatically to a more expensive model. Free models may be limited by provider quotas.
 
-Set `OPENROUTER_API_KEY` in Vercel as a **server-only** secret. The UI fetches the available low-cost model catalogue from OpenRouter and stores each contractor's selected model. Budget and rate limits should also be applied at OpenRouter account level; the in-memory per-instance rate guard is not distributed.
+### Cloudflare R2
 
-## eTenders data
+Configure `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` as **private** Vercel environment variables. Configure the R2 bucket CORS to permit `https://builda-five.vercel.app` (current production hostname), method PUT, and Content-Type. Verify a real signed upload, Firestore metadata save, download and delete before handling real compliance documents.
 
-The OCDS REST API is public and does **not** need an API key:
-- Transparency portal: https://data.etenders.gov.za/
-- Official OpenAPI schema: https://ocds-api.etenders.gov.za/swagger/v1/swagger.json
-- Versioned releases endpoint: https://ocds-api.etenders.gov.za/api/OCDSReleases
-
-The app queries the **server-side** proxy at `GET /api/tenders?page=1` with a signed-in user's Firebase ID token, not the upstream endpoint directly from the browser. The backend filters source dates and caches results briefly. The viewer initially shows construction-related opportunities with future deadlines; use the other filters and Load More to broaden. Check the official tender notice, attachments and the issuing department before acting. The feed is public but not guaranteed complete or real-time.
-
-## Local setup and builds
+### Local and CI validation
 
 ```bash
 npm ci
-cp .env.example .env.local
-# Fill the local Firebase configuration; add server secrets to your server environment.
 npm run build
-npm run dev
 ```
 
-Vite local dev alone does not run Vercel Node functions in `/api`. To test API routes locally, use the Vercel CLI development runtime with an authorised project link, or test them in Vercel preview. Never commit `.env.local`.
+`npm run build` runs Node tests, TypeScript and Vite. A GitHub Actions workflow has been added for pull requests and feature branches.
 
-## Release checklist
+## Trust and privacy
 
-- [ ] Vercel preview `npm run build` passes and API routes deploy.
-- [ ] Firebase rules are deployed to the correct project; authentication, signup, reload and inter-tenant isolation checked.
-- [ ] Verify authenticated real OCDS responses, pagination, duplicate handling and source links.
-- [ ] Verify OpenRouter model listing and a genuine tender explanation with usage caps.
-- [ ] Verify R2 upload/download/delete, CORS and owner isolation with two different accounts.
-- [ ] Mobile navigation, empty, error and loading states visually verified.
-- [ ] Add Firestore rules emulator and end-to-end regression tests before public beta.
-- [ ] Configure App Check, centralised rate limiting, quotas and logging before production release.
-- [ ] Production merge and domain assignment only after these checks.
+- Firestore company and NPO profiles, chats, chat messages, saved notices and file metadata are owner-scoped by the supplied rules.
+- AI requests include the organisation's declared capabilities and selected notice as context. Document metadata is shared as hints, **not document contents**. Sensitive contact details are excluded.
+- Public tender descriptions are untrusted input. OpenRouter output is explanatory, not authoritative legal, compliance or procurement advice.
+- No applications are submitted or declarations signed without authorised human review.
+- Live data coverage and availability depend on government/open-source providers; do not invent matches or guarantees.
 
-Do not claim the app is ready for public tender administration until the external services and cross-user security have been tested.
+## Deployment
 
+Repository: `Mabu007/builda` (historical repository name), Vercel project: `builda` (historical project name), public URL: https://builda-five.vercel.app. Application/product brand is **OPPOTRON**. Do not change repository/project ownership or production domain implicitly during rebrand.
 
-## November 2026 dashboard fixes
-
-- Company-aware opportunity ranking is **explainable heuristic matching** over the currently loaded API batch, using stated services, location and CIDB. It is **not** an eligibility determination or an exhaustive search. Open a tender and request AI analysis for a model-generated assessment with the business context.
-- PWA: `npm run build` generates branded 192/512px icons and `favicon.ico` automatically; `public/manifest.webmanifest` declares standalone app and `public/sw.js` caches **public static shell only**. Never cache authenticated APIs or business documents. Install panel hides after install and in standalone display mode.
-- Firebase permissions: Vercel does **not** publish `firestore.rules`. Ensure Firestore database exists and production web config targets the same project as auth. Review and deploy with `firebase deploy --only firestore:rules --project <YOUR_FIREBASE_PROJECT_ID>` from a machine authenticated to the project. Existing contractor records without `ownerId` can be updated by their matching UID, after which ownership is enforced.
-- R2 upload still requires CORS permitting `https://builda-five.vercel.app`, method PUT, header Content-Type and signed URL GET access. Verify actual document round trip before real compliance files.
-- The frontend uses localStorage only for the theme, not for private business data. If Firestore is unavailable, show an explicit error rather than a misleading empty vault.
-
-## Document Vault and personalised feed
-
-- File picker is inside an accessible upload dialog. Up to 12 files can be queued, each with a **required document title** and optional description, category and expiry. Files are uploaded sequentially to private R2, then metadata is persisted to the signed-in contractor's Firestore subcollection. Failed uploads remain in the queue and are retryable; completed files appear in the live table. Clicking a row opens a metadata dialog with open/delete actions.
-- **IMPORTANT:** The new `description` and `originalName` fields require redeploying the updated `firestore.rules` in the Firebase Console before using the new uploader. Vercel cannot publish them automatically.
-- Tender discovery is no longer restricted to construction. Complete the business profile's free-text industry/service and geographic coverage. A default **For you** feed uses explainable topic, location and CIDB signals over fetched releases, with an **All opportunities** option. This is **relevance ranking, not eligibility certification**, not an exhaustive government database, and not guaranteed funding opportunity coverage.
-- We have removed the install banner and PWA manifest from the current web-first experience, and unregistered the previous service worker to prevent obsolete assets from persisting.
+Vercel's Hobby deployment quota may block Git push previews and fresh production deployments with HTTP 402 until the quota is available or the owner changes the plan. Do not label a release production-ready until the exact commit's build has passed and the production alias is confirmed.

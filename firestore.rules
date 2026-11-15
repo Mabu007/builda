@@ -23,7 +23,7 @@ service cloud.firestore {
     match /contractors/{uid} {
       allow read: if isOwner(uid) || isAdmin();
       allow create: if isOwner(uid) && profileFieldsValid();
-      allow update: if isOwner(uid) && resource.data.ownerId == uid && profileFieldsValid();
+      allow update: if isOwner(uid) && (resource.data.ownerId == uid || !('ownerId' in resource.data)) && profileFieldsValid();
       allow delete: if false;
       match /settings/{docId} {
         allow read: if isOwner(uid);

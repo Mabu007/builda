@@ -96,6 +96,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
   const [province, setProvince] = useState('');
   const [typeFilter, setTypeFilter] = useState<'construction' | 'all'>('construction');
   const [stateFilter, setStateFilter] = useState<'open' | 'all'>('open');
+  const [matchOnly, setMatchOnly] = useState(false);
   const [selected, setSelected] = useState<Tender | null>(null);
   const [analysis, setAnalysis] = useState('');
   const [analysing, setAnalysing] = useState(false);

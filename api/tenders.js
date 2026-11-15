@@ -54,7 +54,7 @@ export default async function handler(req, res) {
       if (!prior || item.publishedAt > prior.publishedAt) unique.set(item.id, item);
     }
     const items = [...unique.values()].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
-    const data = { items, page, pageSize: 250, hasMore: payload.releases.length === 250 || Boolean(payload.links?.next),
+    const data = { items, page, pageSize: 250, hasMore: page < 40 && (payload.releases.length === 250 || Boolean(payload.links?.next)),
       updatedAt: new Date().toISOString(), source: 'National Treasury Transparency Portal (OCDS)',
       coverage: 'Recent published releases, not the complete tender database. Verify deadlines and documents with the issuing authority.' };
     cache.set(key, { time: Date.now(), data });

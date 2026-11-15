@@ -43,8 +43,11 @@ function App(){
 }
 
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
+// BUILDA is a browser-first workspace. Unregister the old PWA worker to prevent stale assets.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => { /* ordinary website still works */ });
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.filter(reg => reg.active?.scriptURL.endsWith('/sw.js')).forEach(reg => void reg.unregister());
+    }).catch(() => { /* non-critical */ });
   });
 }

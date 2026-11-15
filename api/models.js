@@ -21,10 +21,14 @@ export async function allowedModels() {
       .filter(m => Number.isFinite(m.promptPrice) && Number.isFinite(m.completionPrice) &&
         m.promptPrice >= 0 && m.completionPrice >= 0 &&
         m.promptPrice + m.completionPrice <= 0.000005)
-      .sort((a, b) => a.promptPrice + a.completionPrice - b.promptPrice - b.completionPrice || a.name.localeCompare(b.name))
-      .slice(0, 120);
+      .sort((a, b) => a.promptPrice + a.completionPrice - b.promptPrice - b.completionPrice || a.name.localeCompare(b.name));
     if (!models.length) throw new Error('No economical models found.');
-    saved = models; savedAt = Date.now();
+    // The default and reliable lower-cost models must remain selectable even when
+    // the catalogue contains more than 120 free-preview entries.
+    const pinned = new Set(['openai/gpt-4o-mini', 'google/gemini-2.5-flash', 'deepseek/deepseek-chat']);
+    const priorities = models.filter(m => pinned.has(m.id));
+    saved = [...new Map([...priorities, ...models].map(m => [m.id, m])).values()].slice(0, 120);
+    savedAt = Date.now();
   } catch { saved = fallback; savedAt = Date.now(); }
   return saved;
 }

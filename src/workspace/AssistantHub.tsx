@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
 import {
-  collection, deleteDoc, doc, getDocs, limitToLast, onSnapshot, orderBy, query,
+  collection, deleteDoc, doc, getDocs, limit, limitToLast, onSnapshot, orderBy, query,
   serverTimestamp, setDoc, updateDoc, writeBatch
 } from 'firebase/firestore';
 import { ArrowRight, Bot, Check, ChevronDown, Clock3, FileText, Menu, MessageSquareText,
@@ -78,7 +78,7 @@ export default function AssistantHub({ user, organisation, documents, model, sel
   useEffect(() => {
     if (!db) { setStorageError('Firestore is not configured. Chat history cannot be saved.'); return; }
     const path = collection(db, 'contractors', user.uid, 'chats');
-    return onSnapshot(query(path, orderBy('updatedAt','desc')), snapshot => {
+    return onSnapshot(query(path, orderBy('updatedAt','desc'), limit(60)), snapshot => {
       const loaded = snapshot.docs.slice(0, 60).map(item => ({ ...item.data(), id: item.id } as Chat));
       setChats(loaded); setStorageError('');
     }, () => setStorageError('Chat history could not load. Please publish the latest Firestore rules.'));

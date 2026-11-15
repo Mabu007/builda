@@ -25,6 +25,20 @@ const suggested = [
   { title: 'Prepare an application checklist', text: 'Create a practical application preparation checklist for my organisation, identifying what still needs verification.' },
 ];
 const viewTime = (s?: number) => s ? new Date(s * 1000).toLocaleDateString('en-ZA', { month:'short',day:'numeric' }) : 'New';
+const inlineFormatting = (line: string) => line.split(/(\\*\\*[^*]+\\*\\*)/g).map((segment, index) =>
+  segment.startsWith('**') && segment.endsWith('**') ? <strong key={index}>{segment.slice(2,-2)}</strong> : <React.Fragment key={index}>{segment}</React.Fragment>);
+function renderAssistantText(text: string) {
+  return text.split(/\\n/).map((line, i) => {
+    const clean = line.trim();
+    if (!clean) return <div className="op-chat-line-space" key={i}/>;
+    const title = /^(#{1,3}\\s+)(.*)/.exec(clean);
+    if (title) return <div className="op-chat-line-heading" key={i}>{inlineFormatting(title[2])}</div>;
+    const bullet = /^(?:[-•*]\\s+|\\d+[.)]\\s+)(.*)/.exec(clean);
+    if (bullet) return <div className="op-chat-line-bullet" key={i}><span>•</span><span>{inlineFormatting(bullet[1])}</span></div>;
+    return <div className="op-chat-line-text" key={i}>{inlineFormatting(clean)}</div>;
+  });
+}
+
 async function assistantApi(user: User, payload: unknown) {
   const token = await user.getIdToken();
   const response = await fetch('/api/assistant', {
@@ -184,7 +198,7 @@ export default function AssistantHub({ user, organisation, documents, model, sel
         </div>}
         {messages.map(message => <div className={'op-chat-message op-chat-message-' + message.role} key={message.id}>
           <span className="op-chat-message-icon">{message.role === 'assistant' ? <Sparkles size={16}/> : <span>{organisation.name?.charAt(0).toUpperCase() || 'Y'}</span>}</span>
-          <div className="op-chat-message-content"><div className="op-chat-message-label">{message.role === 'assistant' ? 'OPPOTRON' : 'You'}</div><div className="op-chat-message-text">{message.content}</div></div>
+          <div className="op-chat-message-content"><div className="op-chat-message-label">{message.role === 'assistant' ? 'OPPOTRON' : 'You'}</div><div className="op-chat-message-text">{message.role === 'assistant' ? renderAssistantText(message.content) : message.content}</div></div>
         </div>)}
         {busy && <div className="op-chat-message op-chat-message-assistant"><span className="op-chat-message-icon"><Sparkles size={16}/></span><div className="op-chat-message-content"><div className="op-chat-message-label">OPPOTRON</div><div className="op-chat-thinking"><span/><span/><span/> Thinking through your question…</div></div></div>}
         {error && <div className="op-chat-error" role="alert"><span>{error}</span>{retry && <button onClick={() => void send(retry, true)}>Retry response <ArrowRight size={15}/></button>}</div>}

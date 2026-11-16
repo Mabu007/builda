@@ -123,3 +123,14 @@
 .bo-theme-dark .fu-briefing-items strong,.bo-theme-dark .fu-briefing-empty strong{color:#c6e1ce}
 .bo-theme-dark .fu-briefing-footer,.bo-theme-dark .fu-briefing-empty>span,.bo-theme-dark .fu-briefing-badge{background:#284238;color:#c4dfc8;border-color:#3c584a}
 @media(max-width:540px){.fu-briefing-items{padding:0 14px}.fu-briefing-items>button{gap:8px}.fu-briefing-badge{font-size:9px;padding:6px}.fu-briefing-items strong{max-width:210px}}
+
+/* Immediate funding feed with a lightweight profile progress prompt. */
+.fu-onboarding-banner{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 23px;margin:0 0 20px;border-radius:13px;background:#f0f6ef;border:1px solid #dbeadd}
+.fu-onboarding-banner>div{min-width:0;flex:1;max-width:560px}
+.fu-onboarding-banner strong{display:block;font-size:14px;color:#335b3e}
+.fu-onboarding-banner p{font-size:11px;color:#647e6a;line-height:1.7;margin:7px 0 11px}
+.fu-onboarding-banner small{display:block;color:#78917d;font-size:10px;margin-top:7px}
+.fu-onboarding-progress{height:6px;background:#d9e7dc;border-radius:10px;overflow:hidden;max-width:300px}
+.fu-onboarding-progress span{display:block;height:100%;background:#6fa67a;border-radius:10px;transition:width .25s}
+.fu-onboarding-banner button{flex:none;display:flex;align-items:center;gap:7px}
+@media(max-width:670px){.fu-onboarding-banner{flex-direction:column;align-items:stretch;padding:17px}.fu-onboarding-banner button{justify-content:center}}

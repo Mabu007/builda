@@ -42,7 +42,7 @@ export async function insertOpportunity(token,input,{actor='admin'}={}) {
  try{await upsertFunder(token,record);}catch{/* Funding record remains canonical even if funder enrichment needs retry. */}
  return record;
 }
-async function saveOpportunity(token,input,actor){
+export async function saveOpportunity(token,input,actor){
  const id=requireId(input.id),existing=await firestore.get(token,opportunityPath(id));
  if(!existing)throw Object.assign(new Error('Opportunity not found.'),{status:404});
  const valid=normalizeOpportunity({...existing,...input},{...existing,source:existing.source,extractedAt:existing.extractedAt});

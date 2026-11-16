@@ -15,6 +15,7 @@ import AssistantHub from './AssistantHub';
 import FundingOpportunities from './FundingOpportunities';
 import FundingApplications from './FundingApplications';
 import FundingCreator from './FundingCreator';
+import FundingBriefing from './FundingBriefing';
 import type { FundingOpportunity } from './funding';
 import './workspace.css';
 
@@ -243,6 +244,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
               <div className="bo-npo-brief-body"><span className="bo-npo-brief-spark"><Sparkles size={27}/></span><h3>What would you like help with today?</h3><p>Ask about grant requirements, CSI programmes, an application checklist or a funding proposal outline. Your organisation profile provides the context.</p><button className="bo-primary" onClick={() => changeView('assistant')}>Open your AI assistant <ArrowRight size={16}/></button></div>
             </section>
           </div>
+          <FundingBriefing profile={profile} files={files} onOpen={() => changeView('opportunities')}/>
           <div className="bo-npo-four-pillar"><div className="bo-small-kicker">YOUR FUNDRAISING WORKSPACE</div><div className="bo-npo-pillar-grid">
             <button onClick={() => changeView('documents')}><FolderOpen size={19}/><strong>Document vault</strong><span>Organise and track records</span><ArrowRight size={15}/></button>
             <button onClick={() => changeView('opportunities')}><HeartHandshake size={19}/><strong>Funding opportunities</strong><span>Grants and CSI intelligence</span><ArrowRight size={15}/></button>

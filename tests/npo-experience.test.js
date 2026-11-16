@@ -10,7 +10,7 @@ const vault = readFileSync(new URL('../src/workspace/DocumentVault.tsx', import.
 test('fundraising workspace no longer fetches or presents eTenders listings', () => {
   assert.doesNotMatch(workspace, /\/api\/tenders|eTenders|NATIONAL TREASURY/);
   assert.match(workspace, /Funding opportunities/);
-  assert.match(workspace, /FUNDING SOURCE INTEGRATIONS/);
+  assert.match(workspace, /FundingOpportunities/);
 });
 
 test('NPO onboarding has no company or nonprofit mode chooser', () => {

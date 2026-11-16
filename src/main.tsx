@@ -8,9 +8,10 @@ import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import { auth } from './firebase';
 import Landing from './oppo/Landing';
 import Workspace from './workspace/Workspace';
+import AdminDashboard from './admin/AdminDashboard';
 
-type Page = 'home' | 'login' | 'register' | 'dashboard';
-const pageFor = (path: string): Page => path.startsWith('/app') ? 'dashboard' : path === '/login' ? 'login' : path === '/register' ? 'register' : 'home';
+type Page = 'home' | 'login' | 'register' | 'dashboard' | 'admin';
+const pageFor = (path: string): Page => path.startsWith('/admin') ? 'admin' : path.startsWith('/app') ? 'dashboard' : path === '/login' ? 'login' : path === '/register' ? 'register' : 'home';
 
 function App() {
   const [page, setPage] = useState<Page>(() => pageFor(window.location.pathname));
@@ -56,6 +57,11 @@ function App() {
   };
 
   if (page === 'home') return <Landing loggedIn={Boolean(user)} onLogin={() => go('login')} onGetStarted={() => go('register')} onDashboard={() => go('dashboard')}/>;
+  if (page === 'admin') {
+    if (!ready) return <div className="op-auth-page"><div className="op-auth-loading">Verifying administrator access…</div></div>;
+    if (user) return <AdminDashboard user={user} onExit={() => go('home')} onWorkspace={() => go('dashboard')}/>;
+    return <div className="op-auth-page"><div className="op-auth-card"><div className="op-auth-logo"><span>o.</span> OPPOTRON</div><h1>Administrator sign-in required.</h1><p>Sign in with a Firebase account that has the administrator custom claim to access this area.</p><button className="op-auth-back" onClick={() => go('login')}>Log in <ArrowRight size={16}/></button></div></div>;
+  }
   if (page === 'dashboard') {
     if (!ready) return <div className="op-auth-page"><div className="op-auth-loading">Opening your OPPOTRON workspace…</div></div>;
     if (user) return <Workspace user={user} onExit={() => go('home')}/>;

@@ -62,6 +62,14 @@ export const firestore = {
     if(!response.ok) throw Object.assign(new Error(response.status===403?'Database permissions denied.':'Unable to update the record.'),{status:response.status===403?403:502});
     return decode(await response.json());
   },
+  async atomicCreate(token,records) {
+    const writes=records.map(({path,fields})=>({update:{name:documentName(checkPath(path)),...encode(fields)},currentDocument:{exists:false}}));
+    const url=root()+':commit';
+    const response=await fetch(url,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({writes}),signal:AbortSignal.timeout(14000)});
+    if(!response.ok){const data=await response.json().catch(()=>({}));const conflict=[400,409,412].includes(response.status)&&/exists|precondition|already/i.test(JSON.stringify(data));
+      throw Object.assign(new Error(conflict?'Opportunity already exists in the shared database.':'Database transaction failed.'),{status:conflict?409:response.status===403?403:502});}
+    return true;
+  },
   async remove(token,path) {await call(token,'DELETE',path);return true;}
 };
 export function idToken(req) {return /^Bearer\s+(.+)$/i.exec(req.headers.authorization||'')?.[1]||'';}

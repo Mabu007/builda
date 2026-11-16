@@ -55,17 +55,18 @@ async function adminApi<T>(user:User,action:string,body?:unknown):Promise<T>{
   ...(body===undefined?{}:{body:JSON.stringify(body)})
  });
  const result=await response.json().catch(()=>({}));
- if(!response.ok)throw new Error(String(result.error||'Admin request failed.'));
+ if(!response.ok)throw Object.assign(new Error(String(result.error||'Admin request failed.')),{status:response.status});
  return result as T;
 }
-const dateText=(d?:string)=>d?new Date(d).toLocaleString('en-ZA',{dateStyle:'medium'}):'Not recorded';
+const dateText=(d?:string)=>{if(!d)return 'Not recorded';const date=new Date(d);return Number.isNaN(date.getTime())?'Not recorded':date.toLocaleString('en-ZA',{dateStyle:'medium'});};
 export default function AdminDashboard({user,onExit,onWorkspace}:Props){
- const [access,setAccess]=useState<'checking'|'allowed'|'denied'>('checking');
+ const [access,setAccess]=useState<'checking'|'allowed'|'denied'|'failed'>('checking');
  const [section,setSection]=useState<Section>('overview'),[navOpen,setNavOpen]=useState(false);
  const [summary,setSummary]=useState<Summary|null>(null),[users,setUsers]=useState<UserRecord[]>([]),[usersWarning,setUsersWarning]=useState('');
  const [opportunities,setOpportunities]=useState<FundingOpportunity[]>([]),[candidates,setCandidates]=useState<Candidate[]>([]),[jobs,setJobs]=useState<Job[]>([]);
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [search,setSearch]=useState(''),[filter,setFilter]=useState('all');
+ const [userSearch,setUserSearch]=useState(''),[selectedUser,setSelectedUser]=useState<UserRecord|null>(null),[hasMoreOpportunities,setHasMoreOpportunities]=useState(false);
  const [editor,setEditor]=useState<Editor|null>(null),[candidateEdit,setCandidateEdit]=useState<Candidate|null>(null);
  const [prompt,setPrompt]=useState('Find open CSI, grant and foundation funding opportunities for South African nonprofit organisations.');
  const [limit,setLimit]=useState(20),[url,setUrl]=useState(''),[discoverMode,setDiscoverMode]=useState<'search'|'url'>('search');
@@ -73,8 +74,12 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
  const [probeBusy,setProbeBusy]=useState(false),[providerResults,setProviderResults]=useState<{firecrawl?:{ok:boolean;message:string};tavily?:{ok:boolean;message:string}}|null>(null);
  const jobLock=useRef(false),loaded=useRef(false);
  const check=async()=>{
-  try{const res=await adminApi<{admin:boolean}>(user,'session');setAccess(res.admin?'allowed':'denied');}
-  catch{setAccess('denied');}
+  setAccess('checking');
+  try{
+   await user.getIdToken(true);
+   const res=await adminApi<{admin:boolean}>(user,'session');
+   setAccess(res.admin?'allowed':'denied');
+  }catch(error){setAccess([401,403].includes(Number((error as {status?:number}).status))?'denied':'failed');}
  };
  useEffect(()=>{void check();},[user.uid]);
  const fetchSection=async(next:Section)=>{
@@ -82,10 +87,12 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   try{
    if(next==='overview')setSummary(await adminApi<Summary>(user,'overview'));
    if(next==='users'){const data=await adminApi<{items:UserRecord[];warning:string}>(user,'users');setUsers(data.items);setUsersWarning(data.warning||'');}
-   if(next==='opportunities'){const data=await adminApi<AdminData>(user,'opportunities');setOpportunities(data.items||[]);}
+   if(next==='opportunities'){const data=await adminApi<AdminData>(user,'opportunities');setOpportunities(data.items||[]);setHasMoreOpportunities(Boolean(data.hasMore));}
    if(next==='discovery'){
     const [a,b]=await Promise.all([adminApi<{items:Candidate[]}>(user,'candidates'),adminApi<{items:Job[]}>(user,'jobs')]);
-    setCandidates(a.items||[]);setJobs((b.items||[]).sort((x,y)=>y.createdAt.localeCompare(x.createdAt)));
+    setCandidates(a.items||[]);const sorted=(b.items||[]).sort((x,y)=>y.createdAt.localeCompare(x.createdAt));setJobs(sorted);
+     const pending=sorted.find(job=>!['done','failed'].includes(job.status));
+     if(pending)setJobActive(current=>current||pending.id);
    }
   }catch(e){setError(e instanceof Error?e.message:'Unable to load admin records.');}finally{setLoading(false);}
  };
@@ -98,7 +105,8 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   try{
    await adminApi(user,kind,data);after?.();
    setNotice(kind==='delete'?'Opportunity deleted.':kind==='discard'?'Candidate discarded.':kind==='store-pdfs'?'Source PDF processing completed.':kind==='reverify'?'Reverification candidate created for review.':'Saved to the shared funding database.');
-   if(kind==='import'||kind==='discard')await fetchSection('discovery');else await fetchSection('opportunities');
+   if(['import','discard','reverify'].includes(kind)){if(kind==='reverify')setSection('discovery');await fetchSection('discovery');}
+    else {if(kind==='store-pdfs'){setEditor(null);setCandidateEdit(null);}await fetchSection('opportunities');}
   }catch(e){setError(e instanceof Error?e.message:'Action failed.');}
   finally{setBusy(false);}
  };
@@ -114,7 +122,7 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   await action('delete',{id:op.id});
  };
  const status=async(op:FundingOpportunity,value:'published'|'draft'|'archived')=>{
-  if(value==='published'&&op.verificationStatus!=='verified'){setEditor(initialEditor(op));setError('Review and verify the official source before publishing.');return;}
+  if(value==='published'&&(op.verificationStatus!=='verified'||!op.sourceUrl&&!op.applicationUrl)){setEditor(initialEditor(op));setError('Verify the record and provide an official source or application URL before publishing.');return;}
   await action('update',{id:op.id,status:value});
  };
  const probe=async()=>{
@@ -153,7 +161,7 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
  const list=opportunities.filter(op=>(filter==='all'||op.status===filter)&&(!search.trim()||[op.title,op.funder,op.sector].join(' ').toLowerCase().includes(search.toLowerCase())));
  const leave=async()=>{if(auth)await signOut(auth);onExit();};
  if(access==='checking')return <div className="oa-guard"><div className="oa-guard-icon"><ShieldCheck size={27}/></div><h2>Checking administrator permissions…</h2></div>;
- if(access==='denied')return <div className="oa-guard"><div className="oa-guard-icon"><LockKeyhole size={28}/></div><h2>Administrator access required</h2><p>This dashboard is protected by a Firebase admin custom claim. Contact your project owner if you need access.</p><button className="bo-primary" onClick={onWorkspace}>Return to your workspace <ArrowRight size={16}/></button></div>;
+ if(access==='denied')return <div className="oa-guard"><div className="oa-guard-icon"><LockKeyhole size={28}/></div><h2>Administrator access required</h2><p>This dashboard is protected by a Firebase admin custom claim. Sign in with the Firebase account that has admin access. If your role was just granted, refresh your session.</p><button className="bo-primary" onClick={()=>void check()}>Refresh permissions <RefreshCw size={16}/></button><button className="oa-outline" onClick={onWorkspace}>Return to your workspace <ArrowRight size={16}/></button></div>;
  return <div className="oa-shell">
   {navOpen&&<button className="oa-scrim" aria-label="Close admin navigation" onClick={()=>setNavOpen(false)}/>}
   <aside className={'oa-sidebar '+(navOpen?'open':'')}><div className="oa-brand"><span className="oa-mark">o<span>.</span></span><span><strong>OPPOTRON</strong><small>ADMINISTRATION</small></span><button aria-label="Close navigation" onClick={()=>setNavOpen(false)}><X size={19}/></button></div>

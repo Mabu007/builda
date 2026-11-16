@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
 import {
   collection, deleteDoc, doc, getDocs, limit, limitToLast, onSnapshot, orderBy, query,
@@ -19,10 +19,10 @@ type DocumentMeta = { name: string; category?: string; description?: string; exp
 type Props = { user: User; organisation: Organisation; documents: DocumentMeta[]; model: string;
   selectedTender?: Tender | null; onClearTender?: () => void; onViewProfile?: () => void };
 const suggested = [
-  { title: 'Break down an opportunity', text: 'Help me understand a tender or funding call, its requirements, deadlines and next steps.' },
-  { title: 'Check my application readiness', text: 'Based on my organisation profile and document list, what information is missing for common applications?' },
-  { title: 'Explain eligibility language', text: 'Explain the common eligibility requirements in South African tenders and CSI funding calls, in plain language.' },
-  { title: 'Prepare an application checklist', text: 'Create a practical application preparation checklist for my organisation, identifying what still needs verification.' },
+  { title: 'Prepare a funding proposal', text: 'Help me prepare a funding proposal outline for our NPO using only the organisation information I have supplied. Mark any missing financial or impact details clearly.' },
+  { title: 'Check our document readiness', text: 'Review our document list and suggest which NPO governance, financial and registration records we may need for grant applications. Do not claim you verified the files.' },
+  { title: 'Decode a CSI funding call', text: 'Explain how corporate social investment funding calls work, what eligibility conditions to look for, and how to review a call I provide.' },
+  { title: 'Build an application checklist', text: 'Create a practical grant application checklist for our organisation, separating general preparations from funder-specific requirements that must be verified.' },
 ];
 const viewTime = (s?: number) => s ? new Date(s * 1000).toLocaleDateString('en-ZA', { month:'short',day:'numeric' }) : 'New';
 const inlineFormatting = (line: string) => line.split(/(\*\*[^*]+\*\*)/g).map((segment, index) =>
@@ -163,10 +163,10 @@ export default function AssistantHub({ user, organisation, documents, model, sel
       if (!id) setDraft(question);
     } finally { sending.current = false; setBusy(false); }
   };
-  const suggestions = useMemo(() => suggested.filter(item => organisation.organizationType !== 'npo' || !item.title.includes('tender')), [organisation.organizationType]);
+  const suggestions = suggested;
   return <div className="op-chat-shell">
     <aside className={'op-chat-list ' + (mobileList ? 'op-chat-list-open' : '')}>
-      <div className="op-chat-list-top"><div><span className="op-chat-kicker">YOUR ADMIN DESK</span><h2>Conversations</h2></div><button title="New conversation" onClick={startNew}><Plus size={19}/></button></div>
+      <div className="op-chat-list-top"><div><span className="op-chat-kicker">YOUR FUNDRAISING DESK</span><h2>Conversations</h2></div><button title="New conversation" onClick={startNew}><Plus size={19}/></button></div>
       <button className="op-chat-new" onClick={startNew}><Plus size={17}/> New conversation</button>
       <div className="op-chat-section-label">RECENT CONVERSATIONS</div>
       <div className="op-chat-history">
@@ -181,7 +181,7 @@ export default function AssistantHub({ user, organisation, documents, model, sel
     <div className="op-chat-main">
       <div className="op-chat-header">
         <div className="op-chat-head-left"><button className="op-chat-mobile-toggle" aria-label="Show conversations" onClick={() => setMobileList(!mobileList)}><Menu size={20}/></button>
-          <span className="op-chat-bot-icon"><Bot size={19}/></span><span><strong>OPPOTRON Assistant</strong><small>Opportunity research & administration</small></span>
+          <span className="op-chat-bot-icon"><Bot size={19}/></span><span><strong>OPPOTRON Assistant</strong><small>Fundraising & administration support</small></span>
         </div>
         <button className="op-chat-head-new" onClick={startNew}><Plus size={15}/> New chat</button>
       </div>
@@ -190,8 +190,8 @@ export default function AssistantHub({ user, organisation, documents, model, sel
         {!chatId && !messages.length && <div className="op-chat-welcome">
           <div className="op-chat-welcome-icon"><Sparkles size={27}/></div>
           <div className="op-chat-kicker">YOUR AI ADMIN ASSISTANT</div>
-          <h2>What can I take off your desk?</h2>
-          <p>Ask me to decode a tender, explain a CSI funding call, identify application gaps or prepare your next steps. I use your organisation profile as context.</p>
+          <h2>How can I help your NPO today?</h2>
+          <p>I’m here to help with funding proposals, CSI calls, grant applications and your nonprofit paperwork. Your saved organisation profile helps me understand your mission and programmes.</p>
           {currentTender && <div className="op-chat-tender-context"><FileText size={17}/><span><strong>Discussing a selected opportunity</strong><small>{currentTender.title}</small></span><button title="Remove selected opportunity" onClick={() => { setActiveTender(null);onClearTender?.(); }}><X size={15}/></button></div>}
           <div className="op-chat-suggestions">{suggestions.map((item,i)=><button key={i} onClick={() => void send(item.text)} disabled={!canChat || busy}><span><strong>{item.title}</strong><small>{item.text}</small></span><ArrowRight size={17}/></button>)}</div>
           {!organisation.name && <button className="op-chat-profile-link" onClick={onViewProfile}>Complete your organisation profile for more tailored guidance <ArrowRight size={14}/></button>}
@@ -209,10 +209,10 @@ export default function AssistantHub({ user, organisation, documents, model, sel
         <form className="op-chat-composer" onSubmit={e => { e.preventDefault(); void send(); }}>
           <textarea ref={textarea} value={draft} maxLength={3500} rows={2} onChange={e => setDraft(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {e.preventDefault();void send();} }}
-            placeholder="Ask OPPOTRON about tenders, funding, applications…" disabled={busy || !canChat} aria-label="Message OPPOTRON"/>
+            placeholder="Ask about funding, proposals, documents or applications…" disabled={busy || !canChat} aria-label="Message OPPOTRON"/>
           <button className="op-chat-send" type="submit" title="Send message" aria-label="Send message" disabled={busy || !draft.trim() || !canChat}><SendHorizontal size={18}/></button>
         </form>
-        <div className="op-chat-disclaimer"><span>{responseModel || 'Your organisation’s opportunity desk'}</span><span>Verify published requirements before applying.</span></div>
+        <div className="op-chat-disclaimer"><span>{responseModel || 'Your nonprofit fundraising assistant'}</span><span>Always verify funder requirements before applying.</span></div>
       </div>
     </div>
   </div>;

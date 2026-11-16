@@ -59,13 +59,13 @@ function App() {
   if (page === 'dashboard') {
     if (!ready) return <div className="op-auth-page"><div className="op-auth-loading">Opening your OPPOTRON workspace…</div></div>;
     if (user) return <Workspace user={user} onExit={() => go('home')}/>;
-    return <div className="op-auth-page"><div className="op-auth-card"><div className="op-auth-logo"><span>o.</span> OPPOTRON</div><h1>Welcome to your workspace.</h1><p>Sign in to access your private opportunity intelligence, documents and assistant conversations.</p><button className="op-auth-back" onClick={() => go('login')}>Log in to OPPOTRON <ArrowRight size={16}/></button></div></div>;
+    return <div className="op-auth-page"><div className="op-auth-card"><div className="op-auth-logo"><span>o.</span> OPPOTRON</div><h1>Welcome to your workspace.</h1><p>Sign in to access your private fundraising administration, documents and assistant conversations.</p><button className="op-auth-back" onClick={() => go('login')}>Log in to OPPOTRON <ArrowRight size={16}/></button></div></div>;
   }
   return <main className="op-auth-page"><div className="op-auth-card">
     <div className="op-auth-logo"><span>o.</span> OPPOTRON</div>
     <div className="op-section-eyebrow"><span/> {page === 'login' ? 'WELCOME BACK' : 'START WITH OPPOTRON'}</div>
-    <h1>{page === 'login' ? 'Good to see you again.' : 'Your next opportunity starts here.'}</h1>
-    <p>{page === 'login' ? 'Access your opportunity desk and pick up where you left off.' : 'Create a private workspace. Then choose whether you are a company or nonprofit.'}</p>
+    <h1>{page === 'login' ? 'Good to see you again.' : 'Your mission deserves a stronger back office.'}</h1>
+    <p>{page === 'login' ? 'Access your nonprofit fundraising workspace and pick up where you left off.' : 'Create a private fundraising workspace for your nonprofit. Add your mission and documents when you sign in.'}</p>
     <form onSubmit={submitAuth}>
       <label>Email address<input autoComplete="email" required name="email" type="email" placeholder="you@organisation.co.za" maxLength={254}/></label>
       <label>Password<input autoComplete={page === 'login' ? 'current-password' : 'new-password'} required name="password" type="password" minLength={6} placeholder={page === 'login' ? 'Your password' : 'At least 6 characters'}/></label>

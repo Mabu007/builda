@@ -78,6 +78,6 @@ test('funding users can see offline contact options, and source sites are not mi
  assert.match(opportunities,/selected\.applicationInstructions/);
  assert.match(opportunities,/View source website/);
  assert.match(tracking,/selectedOp\.applicationInstructions/);
- assert.match(tracking,/selectedOp\.contactEmail/);
- assert.match(tracking,/selectedOp\.contactPhone/);
+ assert.match(tracking,/selectedOp\?\.contactEmail/);
+ assert.match(tracking,/selectedOp\?\.contactPhone/);
 });

@@ -1,4 +1,5 @@
 import {randomUUID} from 'node:crypto';
+import {lookup} from 'node:dns/promises';
 import {publicUrl,normalizeOpportunity} from './opportunities.js';
 import {signedR2} from './r2.js';
 function failure(message,status=502){return Object.assign(new Error(message),{status});}
@@ -76,9 +77,27 @@ export async function extractFunding(url){
   excerpt:String(data.markdown||'').slice(0,1100),
   notice:normalized?'Unverified extraction. Check the official page before publication.':'No confirmed title and funder extracted; manual review required.'};
 }
+function safeAddress(address,family){
+ if(family===6){
+  const s=address.toLowerCase();
+  if(s==='::1'||s==='::'||s.startsWith('fc')||s.startsWith('fd')||s.startsWith('fe8')||s.startsWith('fe9')||s.startsWith('fea')||s.startsWith('feb')||s.startsWith('::ffff:'))return false;
+  return true;
+ }
+ const octets=address.split('.').map(Number);
+ if(octets.length!==4||octets.some(n=>!Number.isInteger(n)||n<0||n>255))return false;
+ const [a,b]=octets;
+ if(a===0||a===10||a===127||a>=224||a===169&&b===254||a===172&&b>=16&&b<=31||a===192&&b===168||a===100&&b>=64&&b<=127||a===198&&(b===18||b===19))return false;
+ return true;
+}
+async function assertPublicDns(url){
+ const hostname=new URL(url).hostname;
+ const records=await lookup(hostname,{all:true});
+ if(!records.length||records.some(r=>!safeAddress(r.address,r.family)))throw failure('Source PDF resolves to a restricted network address.',400);
+}
 async function fetchPdf(safe){
  let current=safe;
  for(let hop=0;hop<4;hop++){
+  await assertPublicDns(current);
   const response=await fetch(current,{redirect:'manual',headers:{Accept:'application/pdf'},signal:AbortSignal.timeout(13000)});
   if([301,302,303,307,308].includes(response.status)){
    const next=publicUrl(new URL(response.headers.get('location')||'',current).href);

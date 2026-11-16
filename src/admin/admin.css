@@ -162,3 +162,6 @@
 .oa-header button:focus-visible,.oa-sidebar button:focus-visible,.oa-content button:focus-visible,.oa-modal button:focus-visible,.oa-modal input:focus-visible,.oa-modal select:focus-visible,.oa-modal textarea:focus-visible{outline:3px solid #9fc5a6;outline-offset:2px}
 .oa-row-actions button[aria-label]{min-width:36px;min-height:36px}
 @media(max-width:590px){.oa-user-details{grid-template-columns:1fr}.oa-user-details>div{padding:12px 14px}.oa-modal-backdrop{z-index:110}.oa-page-title .oa-refresh{min-height:39px}}
+
+.oa-editor-error{display:flex;align-items:flex-start;gap:9px;padding:12px 24px;background:#fff2ed;border-bottom:1px solid #f1d7cf;color:#a65b4d;font-size:11px;line-height:1.6}
+.oa-editor-error svg{flex:none;margin-top:1px}

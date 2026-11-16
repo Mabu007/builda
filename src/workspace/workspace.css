@@ -216,3 +216,70 @@
 .bo-ai-test-good{margin-top:13px;border:1px solid #d7eadc;background:#ecf7ef;color:#36694b;border-radius:9px;padding:12px 14px;font-size:11px;line-height:1.6}
 .bo-theme-dark .bo-ai-test-good{background:#234334;border-color:#466f55;color:#c1e9c6}
 @media(max-width:560px){.bo-setting-card .bo-outline{margin:10px 0 0!important;width:100%}}
+
+
+/* OPPOTRON fundraising workspace — builds on the established premium dashboard. */
+.bo-shell .bo-brand-word{font-size:19px!important}
+.bo-npo-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+.bo-npo-dashboard-grid{display:grid;grid-template-columns:minmax(0,1.13fr) minmax(300px,.87fr);gap:20px;margin-top:23px}
+.bo-npo-dashboard-grid .bo-panel{min-width:0}
+.bo-npo-brief-body{min-height:274px;padding:20px 28px 30px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.bo-npo-brief-spark{width:53px;height:53px;border-radius:17px;background:linear-gradient(135deg,#23463b,#406756);color:#eed2aa;display:grid;place-items:center;margin-bottom:21px;box-shadow:0 9px 26px #173c2e2c}
+.bo-npo-brief-body h3{font:800 18px/1.35 Manrope,sans-serif;letter-spacing:-.04em;color:#2d4938;margin-bottom:9px}
+.bo-npo-brief-body p{font-size:12px;line-height:1.75;color:#879a88;margin-bottom:21px;max-width:380px}
+.bo-npo-four-pillar{margin-top:32px}
+.bo-npo-pillar-grid{margin-top:14px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.bo-npo-pillar-grid button{position:relative;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:8px;min-height:153px;padding:21px 20px;background:#fff;border:1px solid #e3ece5!important;border-radius:13px;color:#628e71;box-shadow:0 6px 20px #102d1b06}
+.bo-npo-pillar-grid button:hover{border-color:#90b49b!important;background:#f6faf6;transform:translateY(-2px)}
+.bo-npo-pillar-grid strong{font-size:12px;color:#3d6147;margin-top:5px}
+.bo-npo-pillar-grid span{font-size:10px;line-height:1.5;color:#92a495;max-width:170px}
+.bo-npo-pillar-grid button>svg:last-child{position:absolute;right:16px;top:20px;width:14px}
+.bo-npo-future{max-width:1000px;margin:0 auto;padding:clamp(38px,6vw,66px) clamp(24px,5vw,64px);background:#fff;border:1px solid #e6ede5;border-radius:20px;box-shadow:0 18px 60px #17392308;min-height:420px;display:flex;align-items:flex-start;flex-direction:column;justify-content:center}
+.bo-npo-future-icon{display:grid;place-items:center;background:linear-gradient(135deg,#e4efe5,#f6f3e7);color:#4d7c5b;height:65px;width:65px;border-radius:20px;margin-bottom:25px}
+.bo-npo-future .bo-small-kicker{margin-bottom:13px;color:#a38f67}
+.bo-npo-future h2{font:800 clamp(23px,3vw,32px)/1.25 Manrope,sans-serif;color:#2d4c39;letter-spacing:-.05em;margin:0 0 14px}
+.bo-npo-future>p{color:#839687;font-size:13px;line-height:1.85;max-width:720px}
+.bo-npo-future-steps{display:grid;gap:12px;margin:26px 0 30px}
+.bo-npo-future-steps div{display:flex;align-items:flex-start;gap:10px;font-size:12px;line-height:1.65;color:#69816e}
+.bo-npo-future-steps svg{flex:none;color:#629371;margin-top:2px}
+.bo-npo-future-actions{display:flex;gap:10px;flex-wrap:wrap}
+.bo-npo-form-group-heading{display:flex;align-items:center;gap:12px;padding:19px 0 8px;border-bottom:1px solid #e7efe7;margin:10px 0 17px}
+.bo-npo-form-group-heading:first-child{margin-top:0}
+.bo-npo-form-group-heading>span{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:#e7f0e7;color:#63886e;font:800 11px Manrope,sans-serif;flex:none}
+.bo-npo-form-group-heading strong{font-size:12px;color:#375d44}
+.bo-npo-form-group-heading small{display:block;color:#96a99a;font-size:10px;margin-top:4px}
+.bo-npo-settings-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:15px}
+.bo-top-assistant-link{display:flex;gap:9px;align-items:center;border-radius:9px;padding:10px 12px;background:#ecf4ed;color:#3e7956;font-size:11px;font-weight:800}
+.bo-top-assistant-link:hover{background:#dcece0}
+.bo-theme-dark .bo-npo-brief-body h3,.bo-theme-dark .bo-npo-future h2,.bo-theme-dark .bo-npo-pillar-grid strong,.bo-theme-dark .bo-npo-form-group-heading strong{color:#d8eddb}
+.bo-theme-dark .bo-npo-brief-body p,.bo-theme-dark .bo-npo-future>p,.bo-theme-dark .bo-npo-pillar-grid span{color:#9eb6a4}
+.bo-theme-dark .bo-npo-future,.bo-theme-dark .bo-npo-pillar-grid button{background:#1d2f33;border-color:#304a42!important}
+.bo-theme-dark .bo-npo-pillar-grid button:hover{background:#29433b;border-color:#6b987b!important}
+.bo-theme-dark .bo-npo-future-icon,.bo-theme-dark .bo-npo-form-group-heading>span{background:#30463f;color:#c2dcbf}
+.bo-theme-dark .bo-npo-form-group-heading{border-color:#365046}
+.bo-theme-dark .bo-top-assistant-link{background:#274439;color:#c2e3c9}
+.bo-theme-dark .bo-top-assistant-link:hover{background:#355a47}
+/* The assistant is the main workspace, NOT a floating card. */
+.bo-assistant-view{height:100dvh;max-height:100dvh;overflow:hidden}
+.bo-assistant-view .bo-sidebar{height:100dvh;overflow-y:auto}
+.bo-assistant-view .bo-main{height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.bo-assistant-view .bo-topbar{flex:none}
+.bo-assistant-view .bo-content-assistant{flex:1;display:flex;flex-direction:column;min-height:0;max-width:none;width:100%;padding:0!important;margin:0;background:#fff}
+.bo-assistant-view .op-chat-shell{width:100%;height:100%!important;min-height:0!important;margin:0!important;flex:1;display:grid;grid-template-columns:295px minmax(0,1fr);border:0!important;border-radius:0!important;box-shadow:none!important}
+.bo-assistant-view .op-chat-list{background:#f5f8f5}
+.bo-assistant-view .op-chat-list-top{padding:29px 22px 15px}
+.bo-assistant-view .op-chat-new{margin:0 20px 29px}
+.bo-assistant-view .op-chat-section-label{padding-left:23px}
+.bo-assistant-view .op-chat-messages{background:radial-gradient(ellipse at 52% 0%,#eaf4ec49,transparent 52%),#fff;padding-top:40px}
+.bo-assistant-view .op-chat-welcome{max-width:760px}
+.bo-assistant-view .op-chat-welcome>p{max-width:560px;font-size:13px}
+.bo-assistant-view .op-chat-welcome h2{font-size:clamp(27px,3vw,34px)}
+.bo-assistant-view .op-chat-message-text{font-size:13px;line-height:1.9}
+.bo-assistant-view .op-chat-composer-wrap{border-top:1px solid #edf1ed;box-shadow:0 -8px 25px #16362306;padding-top:19px;padding-bottom:23px}
+.bo-assistant-view .op-chat-header{height:79px}
+.bo-theme-dark.bo-assistant-view .bo-content-assistant{background:#14262b}
+.bo-theme-dark.bo-assistant-view .op-chat-list{background:#1b2c30}
+.bo-theme-dark.bo-assistant-view .op-chat-messages{background:radial-gradient(ellipse at 52% 0%,#24483f66,transparent 50%),#14262b}
+@media(max-width:1190px){.bo-npo-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.bo-npo-dashboard-grid{grid-template-columns:1fr}.bo-npo-pillar-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.bo-assistant-view .op-chat-shell{grid-template-columns:235px minmax(0,1fr)}}
+@media(max-width:790px){.bo-npo-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.bo-npo-dashboard-grid{gap:13px}.bo-npo-brief-body{min-height:200px}.bo-assistant-view .bo-topbar{height:63px}.bo-assistant-view .op-chat-shell{grid-template-columns:minmax(0,1fr)}.bo-assistant-view .op-chat-list{position:absolute;width:min(295px,85vw)}.bo-assistant-view .op-chat-header{height:68px}.bo-assistant-view .op-chat-messages{padding-top:23px}.bo-assistant-view .op-chat-composer-wrap{padding-bottom:calc(16px + env(safe-area-inset-bottom))}}
+@media(max-width:560px){.bo-npo-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.bo-npo-pillar-grid{gap:8px}.bo-npo-pillar-grid button{padding:16px;min-height:137px}.bo-npo-brief-body{padding:21px}.bo-npo-future{padding:28px 20px;min-height:0}.bo-npo-future-actions{flex-direction:column;width:100%}.bo-npo-future-actions>*{width:100%}.bo-top-assistant-link{padding:9px}.bo-top-assistant-link>span{display:none}.bo-assistant-view .bo-topbar{padding:0 12px}.bo-assistant-view .op-chat-header{padding:11px}.bo-assistant-view .op-chat-messages{padding:17px 13px}.bo-assistant-view .op-chat-composer-wrap{padding:13px 12px calc(15px + env(safe-area-inset-bottom))}.bo-npo-form-group-heading{margin:14px 0 13px}.bo-npo-metrics .bo-metric{min-height:154px}.bo-npo-metrics .bo-metric:last-child{grid-column:span 2}}

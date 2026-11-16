@@ -29,7 +29,7 @@ const ACCEPTED: Record<string, string> = {
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 };
-const categories = ['Compliance', 'Registration', 'Tax & finance', 'Qualifications', 'Project records', 'Other'];
+const categories = ['NPO registration', 'NPC incorporation', 'PBO / tax exemption', 'Constitution', 'Organisation profile', 'Financial statements', 'Annual reports', 'Governance & board', 'Programme & impact reports', 'Budgets & funding proposals', 'Policies & compliance', 'Letters & supporting documents', 'Other'];
 const sizeText = (n: number) => n < 1024 * 1024 ? Math.max(1, Math.round(n / 1024)) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
 const dateText = (date?: string) => date ? new Date(date).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Not specified';
 const fileDate = (date?: { seconds: number }) => date?.seconds ? new Date(date.seconds * 1000).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Just added';
@@ -72,7 +72,7 @@ export default function DocumentVault({ user, files, loading, error, onNotice }:
         return {
           id: crypto.randomUUID(), file,
           name: file.name.replace(/\.[^.]+$/, '').slice(0, 110), description: '',
-          category: 'Compliance', expiresAt: '', status: valid ? 'ready' as const : 'error' as const,
+          category: 'Other', expiresAt: '', status: valid ? 'ready' as const : 'error' as const,
           error: valid ? '' : 'PDF, image, Word or Excel files up to 15 MB only.'
         };
       })];
@@ -182,9 +182,9 @@ export default function DocumentVault({ user, files, loading, error, onNotice }:
   return <>
     <div className="bo-page-heading">
       <div>
-        <div className="bo-eyebrow"><LockKeyhole size={13}/> PRIVATE BUSINESS STORAGE</div>
+        <div className="bo-eyebrow"><LockKeyhole size={13}/> PRIVATE NONPROFIT STORAGE</div>
         <h1>Document vault<span className="bo-heading-dot">.</span></h1>
-        <p>Store your business documents and keep their details in one place.</p>
+        <p>Organise your registration, governance, financial and programme documents in one private place.</p>
       </div>
       <button className="bo-primary" onClick={() => setUploadOpen(true)} disabled={loading || Boolean(error)}>
         <Plus size={18}/> Upload a document
@@ -193,7 +193,7 @@ export default function DocumentVault({ user, files, loading, error, onNotice }:
     {error && <div className="bo-inline-error" role="alert">{error} <button onClick={() => window.location.reload()}>Retry connection</button></div>}
     <section className="bo-panel bo-document-table-panel">
       <div className="bo-table-top">
-        <div><div className="bo-small-kicker">PRIVATE DOCUMENT LIBRARY</div><h3>Company documents</h3></div>
+        <div><div className="bo-small-kicker">PRIVATE DOCUMENT LIBRARY</div><h3>Organisation documents</h3></div>
         <span className="bo-record-count">{loading ? 'Loading…' : files.length + (files.length === 1 ? ' document' : ' documents')}</span>
       </div>
       {loading ? <div className="bo-skeleton-wrap">{[1,2,3].map(i => <div className="bo-skeleton" key={i}/>)}</div> :
@@ -209,7 +209,7 @@ export default function DocumentVault({ user, files, loading, error, onNotice }:
         <div className="bo-doc-empty">
           <div className="bo-doc-empty-art"><FolderOpen size={31}/></div>
           <h3>Your document library is ready.</h3>
-          <p>Start by uploading your business documents. Each file gets a name, optional description and its own secure record.</p>
+          <p>Start with your NPO registration, constitution, financial statements or organisation profile. Each file gets a name, optional description and its own secure record.</p>
           <button className="bo-primary" onClick={() => setUploadOpen(true)}><Plus size={17}/> Upload your first document</button>
         </div>}
     </section>
@@ -240,7 +240,7 @@ export default function DocumentVault({ user, files, loading, error, onNotice }:
             </div>}
             {batchError && <p role="alert" className="bo-doc-batch-error">{batchError}</p>}
           </div>
-          <div className="bo-doc-modal-actions"><span>{busy ? 'Uploading ' + progress.done + ' of ' + progress.total + ' completed' : 'Private cloud storage'}</span><button type="button" className="bo-outline" onClick={closeUpload} disabled={busy}>Cancel</button><button type="submit" className="bo-primary" disabled={busy || !drafts.some(d => d.status !== 'saved') || Boolean(error)}><CloudUpload size={17}/>{busy ? 'Uploading…' : 'Save ' + drafts.filter(d => d.status !== 'saved').length + (drafts.filter(d => d.status !== 'saved').length === 1 ? ' document' : ' documents')}</button></div>
+          <div className="bo-doc-modal-actions"><span>{busy ? 'Uploading ' + progress.done + ' of ' + progress.total + ' completed' : 'Private nonprofit storage'}</span><button type="button" className="bo-outline" onClick={closeUpload} disabled={busy}>Cancel</button><button type="submit" className="bo-primary" disabled={busy || !drafts.some(d => d.status !== 'saved') || Boolean(error)}><CloudUpload size={17}/>{busy ? 'Uploading…' : 'Save ' + drafts.filter(d => d.status !== 'saved').length + (drafts.filter(d => d.status !== 'saved').length === 1 ? ' document' : ' documents')}</button></div>
         </form>
       </section>
     </div>}

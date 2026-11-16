@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildMessages } from '../api/assistant.js';
+import { existsSync } from 'node:fs';
 
 const workspace = readFileSync(new URL('../src/workspace/Workspace.tsx', import.meta.url), 'utf8');
 const landing = readFileSync(new URL('../src/oppo/Landing.tsx', import.meta.url), 'utf8');
@@ -27,23 +27,16 @@ test('document upload includes NPO-specific categories', () => {
 });
 
 test('landing clearly discloses planned fundraising features', () => {
-  assert.match(landing, /The AI Fundraising Workspace for Nonprofits/i);
+  assert.match(landing, /THE FUNDRAISING WORKSPACE FOR NONPROFITS/i);
   assert.match(landing, /TIPTAP|Tiptap/);
   assert.match(landing, /planned|coming/i);
 });
 
-test('AI uses NPO registration, beneficiary and funding priority information without fabricating figures', () => {
-  const messages = buildMessages({
-    company: {
-      organizationType:'npo', name:'Hope NPO', registration:'NPO 123-456', pboNumber:'PBO 123',
-      beneficiaries:'Youth in Soweto', fundingPriorities:'Learning materials', phone:'078 123 4567'
-    },
-    messages:[{role:'user',content:'Help me draft a grant proposal'}]
-  });
-  const context = messages[1].content;
-  assert.match(context,/NPO 123-456/);
-  assert.match(context,/Youth in Soweto/);
-  assert.match(context,/Learning materials/);
-  assert.doesNotMatch(context,/078 123 4567/);
-  assert.match(messages[0].content,/Never invent/);
+test('general conversational assistant was retired, document creator remains available', () => {
+  const creator = readFileSync(new URL('../src/workspace/FundingCreator.tsx', import.meta.url), 'utf8');
+  assert.equal(existsSync(new URL('../api/assistant.js', import.meta.url)), false);
+  assert.match(creator, /funding-draft|fundingDrafts/);
+  assert.match(workspace, /FundingCreator/);
+  assert.doesNotMatch(workspace, /Ask OPPOTRON|AssistantHub/);
+
 });

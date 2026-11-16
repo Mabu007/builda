@@ -1,24 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMessages } from '../api/assistant.js';
 import { completeAI, classifyOpenRouterError, DEFAULT_MODEL } from '../api/_lib/openrouter.js';
 
-test('OPPOTRON assistant receives tailored NPO context without contact details', () => {
-  const messages = buildMessages({
-    company: { organizationType:'npo', name:'Example NPO', category:'Youth Development', services:'After-school learning', phone:'078 000 0000', email:'private@example.com' },
-    documents: [{name:'NPO certificate', category:'Registration', description:'registration status'}],
-    messages: [{role:'user',content:'What documents do we need for a CSI call?'}]
-  });
-  assert.equal(messages.at(-1).content, 'What documents do we need for a CSI call?');
-  assert.match(messages[1].content, /Nonprofit/);
-  assert.match(messages[1].content, /NPO certificate/);
-  assert.ok(!JSON.stringify(messages).includes('private@example.com'));
-  assert.ok(!JSON.stringify(messages).includes('078 000 0000'));
-});
-
-test('the AI assistant refuses empty messages', () => {
-  assert.throws(() => buildMessages({ messages:[{role:'assistant',content:'Hello'}] }), /Write a question/);
-});
+// OpenRouter remains in use by the explicit Funding Document Creator;
+// the conversational Ask OPPOTRON endpoint has been retired.
 
 test('OpenRouter errors are distinguished: insufficient credits versus provider failure', () => {
   const budget = classifyOpenRouterError(402, {error:{code:402,metadata:{error_type:'payment_required'}}});

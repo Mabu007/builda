@@ -1,7 +1,7 @@
 import React, {useEffect,useMemo,useState} from 'react';
 import type {User} from 'firebase/auth';
 import {collection,deleteDoc,doc,onSnapshot,query,serverTimestamp,setDoc,where} from 'firebase/firestore';
-import {ArrowRight,ArrowUpRight,Bookmark,CalendarDays,CheckCircle2,ClipboardCheck,FilePenLine,FileText,FolderOpen,HeartHandshake,LockKeyhole,Search,Sparkles,X} from 'lucide-react';
+import {ArrowRight,ArrowUpRight,Bookmark,CalendarDays,CheckCircle2,ClipboardCheck,FilePenLine,FileText,FolderOpen,HeartHandshake,LockKeyhole,Search,Sparkles,ShieldCheck,X} from 'lucide-react';
 import {db} from '../firebase';
 import {matchOpportunity,opportunityExpired,type FundingOpportunity} from './funding';
 import './funding-ui.css';

@@ -70,6 +70,16 @@ export const firestore = {
       throw Object.assign(new Error(conflict?'Opportunity already exists in the shared database.':'Database transaction failed.'),{status:conflict?409:response.status===403?403:502});}
     return true;
   },
+  async atomicUpdate(token,path,fields,createRecords=[]) {
+    const writes=[
+      {update:{name:documentName(checkPath(path)),...encode(fields)},currentDocument:{exists:true}},
+      ...createRecords.map(record=>({update:{name:documentName(checkPath(record.path)),...encode(record.fields)},currentDocument:{exists:false}}))
+    ];
+    const response=await fetch(root()+':commit',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({writes}),signal:AbortSignal.timeout(14000)});
+    if(!response.ok){const data=await response.json().catch(()=>({}));const conflict=[400,409,412].includes(response.status)&&/exists|precondition|already/i.test(JSON.stringify(data));
+      throw Object.assign(new Error(conflict?'Duplicate funder, application round or canonical source detected.':'Unable to update funding record.'),{status:conflict?409:response.status===403?403:502});}
+    return true;
+  },
   async remove(token,path) {await call(token,'DELETE',path);return true;}
 };
 export function idToken(req) {return /^Bearer\s+(.+)$/i.exec(req.headers.authorization||'')?.[1]||'';}

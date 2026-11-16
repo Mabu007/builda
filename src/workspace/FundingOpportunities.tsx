@@ -73,15 +73,15 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
     <select aria-label="Funding sector" value={sector} onChange={e=>setSector(e.target.value)}><option value="">All focus areas</option>{sectors.map(x=><option key={x}>{x}</option>)}</select></div>
    {loading?<div className="bo-skeleton-wrap">{[1,2,3].map(i=><div className="bo-skeleton" key={i}/>)}</div>:
     visible.length?<div className="fu-opportunity-grid">{visible.map(({op,match:m})=><article className="fu-opportunity-card" key={op.id}>
-     <div className="fu-card-overline"><span><HeartHandshake size={15}/> {op.sector||'Funding'}</span><span>{op.verificationStatus==='verified'?'Source reviewed':'Review source'}</span></div>
+     <div className="fu-card-overline"><span><HeartHandshake size={15}/> {op.sector||'Funding'}</span><span>{opportunityExpired(op)?'Deadline passed':op.verificationStatus==='verified'?'Source reviewed':'Review source'}</span></div>
      <h3>{op.title}</h3><p className="fu-funder">{op.funder}</p>
      <p className="fu-desc">{op.description||'Description unavailable. Review the original source.'}</p>
-     <div className="fu-match-summary"><Sparkles size={17}/><span><strong>{m.score}/95 relevance score</strong><small>{m.reasons[0]||'Review eligibility carefully'}</small></span></div>
+     <div className="fu-match-summary"><Sparkles size={17}/><span><strong>{readiness.personalised?m.score+'/95 profile relevance':'Published funding call'}</strong><small>{readiness.personalised?(m.reasons[0]||'Check funder eligibility'):'Personalised ordering starts at 30% profile completion'}</small></span></div>
      <div className="fu-meta"><span><CalendarDays size={14}/>{op.deadline?displayDate(op.deadline):'Deadline unverified'}</span><span>{op.amount||'Amount not specified'}</span></div>
      <div className="fu-card-actions"><button className="bo-outline" onClick={()=>void save(op)} disabled={working===op.id}><Bookmark size={16} fill={saved.includes(op.id)?'currentColor':'none'}/>{saved.includes(op.id)?'Saved':'Save'}</button><button className="bo-primary" onClick={()=>setSelected(op)}>View details <ArrowRight size={16}/></button></div>
     </article>)}</div>:<section className="fu-empty"><span className="fu-empty-symbol"><HeartHandshake size={28}/></span>
-     <h2>{all.length?'No matches for your current profile.':'Funding sources are being added.'}</h2>
-     <p>{all.length?'Try expanding your NPO profile or clearing the search filter. We only show published calls aligned to your mission.':'The administration team is discovering and reviewing funding calls. Verified records will appear here when published.'}</p>
+     <h2>{all.length?'No opportunities match these filters.':'Funding sources are being added.'}</h2>
+     <p>{all.length?'Try clearing the search or selecting all focus areas. Every published call remains accessible.':'The administration team is discovering and reviewing funding calls. Published records will appear here automatically.'}</p>
     </section>}
   {selected&&<div className="fu-modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setSelected(null);}}>
    <section className="fu-modal" role="dialog" aria-modal="true" aria-labelledby="fu-modal-title">
@@ -89,8 +89,7 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
     <div className="fu-modal-body">
      <div className="fu-detail-badges"><span><CalendarDays size={15}/> {displayDate(selected.deadline)}</span><span>{selected.amount||'Funding amount not specified'}</span><span>{selected.coverage||'Coverage unverified'}</span></div>
      <p className="fu-detail-text">{selected.description||'The original source does not provide a summary.'}</p>
-     <h3><Sparkles size={17}/> Why it may match your NPO</h3>
-     <div className="fu-detail-list">{(match?.reasons.length?match.reasons:['No confirmed alignment evidence']).map(x=><p key={x}><CheckCircle2 size={15}/>{x}</p>)}</div>
+     {readiness.personalised?<><h3><Sparkles size={17}/> Relevance to your organisation</h3><div className="fu-detail-list">{(match?.reasons.length?match.reasons:['Review eligibility directly with the funder']).map(x=><p key={x}><CheckCircle2 size={15}/>{x}</p>)}</div></>:<p className="fu-detail-text">Add 30% of your organisation profile to unlock relevance ranking. You can review this funding opportunity now.</p>}
      <h3><ShieldCheck size={17}/> Eligibility & requirements</h3>
      <p className="fu-detail-text">{selected.eligibility||'Eligibility conditions have not been verified.'}</p>
      <p className="fu-detail-text">{selected.registration?('Registration: '+selected.registration):'Registration requirements not specified.'}</p>
@@ -98,7 +97,7 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
      {match?.missingDocuments.length?<><h3><FolderOpen size={17}/> Documents to check</h3><div className="fu-detail-list">{match.missingDocuments.map(x=><p key={x}><FolderOpen size={15}/>{x} — not found by filename/category; confirm the actual contents.</p>)}</div></>:null}
      {match?.gaps.length?<><h3>What still needs verification</h3><div className="fu-detail-list">{match.gaps.map(x=><p key={x}><LockKeyhole size={15}/>{x}</p>)}</div></>:null}
      {(selected.documents||[]).length?<><h3>Supporting documents</h3><div className="fu-detail-list">{selected.documents.map((d,i)=><p key={i}><FileText size={15}/>{d.status==='stored'&&d.storageKey?<button onClick={()=>void openStored(selected,d.storageKey!)}>{d.title} · Open stored PDF</button>:<a href={d.sourceUrl} target="_blank" rel="noopener noreferrer">{d.title} · Official source</a>}</p>)}</div></>:null}
-     <p className="fu-source-note">This is an AI-assisted relevance estimate, not a decision about eligibility. Verify requirements, amounts and deadlines on the official source before applying.</p>
+     <p className="fu-source-note">Profile relevance is a keyword-based estimate, not an eligibility decision. Verify requirements, amounts and deadlines on the official source before applying.</p>
     </div>
     <div className="fu-modal-actions"><button className="bo-outline" onClick={()=>{onPrepare(selected);setSelected(null);}}><FilePenLine size={15}/> Prepare document</button><button className="bo-outline" onClick={()=>void start(selected)} disabled={working===selected.id}><ClipboardCheck size={15}/>{applications.includes(selected.id)?'Open application':'Track application'}</button>{selected.applicationUrl||selected.sourceUrl?<a className="bo-primary" href={selected.applicationUrl||selected.sourceUrl} target="_blank" rel="noopener noreferrer">Official application <ArrowUpRight size={16}/></a>:null}</div>
    </section>

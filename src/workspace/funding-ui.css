@@ -134,3 +134,16 @@
 .fu-onboarding-progress span{display:block;height:100%;background:#6fa67a;border-radius:10px;transition:width .25s}
 .fu-onboarding-banner button{flex:none;display:flex;align-items:center;gap:7px}
 @media(max-width:670px){.fu-onboarding-banner{flex-direction:column;align-items:stretch;padding:17px}.fu-onboarding-banner button{justify-content:center}}
+
+
+/* Contact-only/offline funding records: accessible email and telephone actions. */
+.fu-contact-links{display:flex;flex-wrap:wrap;gap:9px;margin:10px 0 18px}
+.fu-contact-links a{display:inline-flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid #d9e8de;border-radius:9px;background:#f1f7f2;color:#386d4d;font-size:12px;font-weight:750;overflow-wrap:anywhere;text-decoration:none;max-width:100%}
+.fu-contact-links a:hover,.fu-contact-links a:focus-visible{background:#e1f0e5;border-color:#9bc6a6}
+.fu-application-guidance{background:#f1f7f2;border-radius:10px;padding:16px 18px;border:1px solid #dfebe1}
+.fu-application-guidance strong{font-size:12px;color:#3b6c4a}
+.fu-application-guidance p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;font-size:12px;color:#617d68;margin-top:6px}
+.bo-theme-dark .fu-contact-links a,.bo-theme-dark .fu-application-guidance{background:#233b33;border-color:#365c49;color:#c8e5d0}
+.bo-theme-dark .fu-application-guidance strong{color:#c8e5d0}
+.bo-theme-dark .fu-application-guidance p{color:#aec5b6}
+@media(max-width:560px){.fu-contact-links{flex-direction:column}.fu-contact-links a{width:100%}}

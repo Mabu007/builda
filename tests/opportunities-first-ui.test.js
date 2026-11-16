@@ -58,3 +58,26 @@ test('dedicated administrator login checks Firebase custom claim', () => {
   assert.match(auth, /claims\.claims\.admin !== true/);
   assert.match(auth, /Administrator login|Admin access/);
 });
+
+
+test('manual opportunities can be published without mandatory source verification',()=>{
+ const admin=source('src/admin/AdminDashboard.tsx');
+ const backend=source('api/admin.js');
+ assert.doesNotMatch(admin,/To publish, choose Verified|Verify the record and provide an official source/);
+ assert.doesNotMatch(backend,/Official source URL and verified status are required|Set verification to Verified and supply/);
+ assert.match(admin,/contactEmail/);
+ assert.match(admin,/contactPhone/);
+ assert.match(admin,/applicationInstructions/);
+});
+
+test('funding users can see offline contact options, and source sites are not mistaken for application links',()=>{
+ const opportunities=source('src/workspace/FundingOpportunities.tsx');
+ const tracking=source('src/workspace/FundingApplications.tsx');
+ assert.match(opportunities,/selected\.contactEmail/);
+ assert.match(opportunities,/selected\.contactPhone/);
+ assert.match(opportunities,/selected\.applicationInstructions/);
+ assert.match(opportunities,/View source website/);
+ assert.match(tracking,/selectedOp\.applicationInstructions/);
+ assert.match(tracking,/selectedOp\?\.contactEmail/);
+ assert.match(tracking,/selectedOp\?\.contactPhone/);
+});

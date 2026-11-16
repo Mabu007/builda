@@ -1,7 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import type {User} from 'firebase/auth';
 import {collection,deleteDoc,doc,onSnapshot,query,serverTimestamp,updateDoc,where} from 'firebase/firestore';
-import {ArrowUpRight,Check,ClipboardCheck,FileText,HeartHandshake,LockKeyhole,Save,Trash2} from 'lucide-react';
+import {ArrowUpRight,Check,ClipboardCheck,FileText,HeartHandshake,LockKeyhole,Mail,Phone,Save,Trash2} from 'lucide-react';
 import {db} from '../firebase';
 import type {FundingOpportunity} from './funding';
 import './funding-ui.css';
@@ -25,13 +25,13 @@ export default function FundingApplications({user,onOpportunities,onPrepare}:Pro
    await updateDoc(doc(db,'contractors',user.uid,'applications',draft.opportunityId),{
     status:draft.status,notes:draft.notes.slice(0,4000),requirements:draft.requirements||[],updatedAt:serverTimestamp()
    });
-   setSelected('');
+   setSelected('');setDraft(null);
   }catch{setError('Unable to save application progress. Check permissions.');}
   finally{setBusy(false);}
  };
  const remove=async(app:Application)=>{
   if(!db||!confirm('Remove this application tracking record? Your documents will not be deleted.'))return;
-  try{await deleteDoc(doc(db,'contractors',user.uid,'applications',app.opportunityId));setSelected('');}
+  try{await deleteDoc(doc(db,'contractors',user.uid,'applications',app.opportunityId));setSelected('');setDraft(null);}
   catch{setError('Unable to remove application record.');}
  };
  const selectedOp=opportunities.find(x=>x.id===selected);
@@ -45,13 +45,19 @@ export default function FundingApplications({user,onOpportunities,onPrepare}:Pro
   </button>;
  })}</div><div className="fu-application-detail">{!draft?<div className="fu-application-prompt"><ClipboardCheck size={28}/><h3>Choose an application</h3><p>Review its details, track your progress and keep notes in your private account.</p></div>:
  <><div className="fu-application-detail-header"><span className="bo-small-kicker">YOUR PRIVATE APPLICATION RECORD</span><h2>{selectedOp?.title||'Application record'}</h2><p>{selectedOp?.funder||'Source unavailable'}</p></div>
- <div className="fu-application-edit"><label>Application status<select value={draft.status} onChange={e=>setDraft({...draft,status:e.target.value as Application['status']})}>{statuses.map(status=><option key={status} value={status}>{status[0].toUpperCase()+status.slice(1)}</option>)}</select></label>
+ <div className="fu-application-edit">
+  {selectedOp?.applicationInstructions&&<div className="fu-application-guidance"><strong>How to apply</strong><p>{selectedOp.applicationInstructions}</p></div>}
+  {(selectedOp?.contactEmail||selectedOp?.contactPhone)&&<div className="fu-contact-links">
+   {selectedOp?.contactEmail&&<a href={'mailto:'+selectedOp.contactEmail}><Mail size={15}/>{selectedOp.contactEmail}</a>}
+   {selectedOp?.contactPhone&&<a href={'tel:'+selectedOp.contactPhone.replace(/[^\d+]/g,'')}><Phone size={15}/>{selectedOp.contactPhone}</a>}
+  </div>}
+  <label>Application status<select value={draft.status} onChange={e=>setDraft({...draft,status:e.target.value as Application['status']})}>{statuses.map(status=><option key={status} value={status}>{status[0].toUpperCase()+status.slice(1)}</option>)}</select></label>
   {draft.status==='submitted'&&<p className="fu-application-disclaimer"><LockKeyhole size={14}/> “Submitted” means you confirmed submission externally. OPPOTRON has not submitted anything for you.</p>}
   <label>Application notes<textarea rows={6} maxLength={4000} value={draft.notes||''} onChange={e=>setDraft({...draft,notes:e.target.value})} placeholder="Application reference, contacts, next steps, queries and outcomes…"/></label>
   {(selectedOp?.requirements||[]).length>0&&<div className="fu-application-checklist"><strong>Funder requirements to prepare</strong>{selectedOp!.requirements.map((req,i)=><label key={i}><input type="checkbox" checked={draft.requirements?.includes(req)||false} onChange={e=>setDraft({...draft,requirements:e.target.checked?[...(draft.requirements||[]),req]:(draft.requirements||[]).filter(x=>x!==req)})}/><span>{req}</span></label>)}</div>}
   <div className="fu-application-tools"><button className="bo-primary" disabled={busy} onClick={()=>void save()}><Save size={16}/>{busy?'Saving…':'Save progress'}</button>
    {selectedOp&&<button className="bo-outline" onClick={()=>onPrepare(selectedOp)}><FileText size={16}/> Prepare document</button>}
-   {selectedOp?.applicationUrl&&<a className="bo-outline" href={selectedOp.applicationUrl} target="_blank" rel="noopener noreferrer">Official application <ArrowUpRight size={16}/></a>}
+   {selectedOp?.applicationUrl?<a className="bo-outline" href={selectedOp.applicationUrl} target="_blank" rel="noopener noreferrer">Application website <ArrowUpRight size={16}/></a>:selectedOp?.sourceUrl?<a className="bo-outline" href={selectedOp.sourceUrl} target="_blank" rel="noopener noreferrer">View source website <ArrowUpRight size={16}/></a>:null}
    <button className="fu-delete" onClick={()=>void remove(draft)}><Trash2 size={16}/> Remove</button></div>
  </div></>}</div></div>}</>;
 }

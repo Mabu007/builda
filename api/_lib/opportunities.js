@@ -38,12 +38,24 @@ function docs(value) {
   return {title:shorten(file?.title||'Supporting document',160),sourceUrl:url,storageKey:shorten(file?.storageKey,240),status:file?.status==='stored'?'stored':'external',size:Number.isInteger(file?.size)?file.size:0};
  }).filter(Boolean);
 }
-const isDate=value=>!value||/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value+'T12:00:00Z'));
+const isDate=value=>{
+ if(!value)return true;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+ const date=new Date(value+'T12:00:00Z');
+ return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===value;
+};
 export function normalizeOpportunity(raw={},existing={}) {
- const title=shorten(raw.title,280),funder=shorten(raw.funder,180);
- if(!title||!funder)throw Object.assign(new Error('Title and funder are required.'),{status:400});
- const sourceUrl=publicUrl(raw.sourceUrl||raw.applicationUrl||'');
- const applicationUrl=publicUrl(raw.applicationUrl||raw.sourceUrl||'');
+ const title=shorten(raw.title,280),funder=shorten(raw.funder,180)||'Not specified';
+ if(!title)throw Object.assign(new Error('Opportunity title is required.'),{status:400});
+ // A funding call may be shared by email, telephone or offline, without a website.
+ // Keep source and application URLs separate: a source website is not automatically an application form.
+ const sourceUrl=publicUrl(raw.sourceUrl||'');
+ const applicationUrl=publicUrl(raw.applicationUrl||'');
+ const contactEmail=shorten(raw.contactEmail,254);
+ if(contactEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail))
+  throw Object.assign(new Error('Enter a valid contact email address or leave it blank.'),{status:400});
+ const contactPhone=shorten(raw.contactPhone,100);
+ const applicationInstructions=shorten(raw.applicationInstructions,2500);
  if((raw.sourceUrl&&!sourceUrl)||(raw.applicationUrl&&!applicationUrl))throw Object.assign(new Error('Use valid public HTTPS source and application URLs.'),{status:400});
  const deadline=shorten(raw.deadline,30);if(!isDate(deadline))throw Object.assign(new Error('Deadline must use YYYY-MM-DD.'),{status:400});
  const amount=shorten(raw.amount,120),sector=shorten(raw.sector||'Other',90),round=shorten(raw.round,90);
@@ -54,7 +66,8 @@ export function normalizeOpportunity(raw={},existing={}) {
  return {
   title,funder,description:shorten(raw.description,7000),sector,eligibility:shorten(raw.eligibility,4000),
   registration:shorten(raw.registration,250),coverage:shorten(raw.coverage,300),amount,deadline,round,
-  requirements,applicationUrl,sourceUrl,canonicalUrl:publicUrl(raw.canonicalUrl||sourceUrl||applicationUrl),documents,
+  requirements,applicationUrl,sourceUrl,contactEmail,contactPhone,applicationInstructions,
+  canonicalUrl:publicUrl(raw.canonicalUrl||sourceUrl||applicationUrl),documents,
   verificationStatus:verification,status,published:status==='published',source:shorten(raw.source||'manual',40),
   extractedAt:shorten(raw.extractedAt||existing.extractedAt,40),
   lastCheckedAt:shorten(raw.lastCheckedAt||existing.lastCheckedAt,40),

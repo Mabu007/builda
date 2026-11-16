@@ -21,12 +21,12 @@ type Props={user:User;onExit:()=>void;onWorkspace:()=>void};
 type Editor={
  id:string;title:string;funder:string;description:string;sector:string;eligibility:string;
  registration:string;coverage:string;amount:string;deadline:string;round:string;
- applicationUrl:string;sourceUrl:string;requirementsText:string;documentsText:string;
+ applicationUrl:string;sourceUrl:string;contactEmail:string;contactPhone:string;applicationInstructions:string;requirementsText:string;documentsText:string;
  verificationStatus:string;status:string;notes:string;
 };
 const emptyEditor:Editor={
- id:'',title:'',funder:'',description:'',sector:'Education',eligibility:'',registration:'',
- coverage:'South Africa',amount:'',deadline:'',round:'',applicationUrl:'',sourceUrl:'',
+ id:'',title:'',funder:'',description:'',sector:'General',eligibility:'',registration:'',
+ coverage:'',amount:'',deadline:'',round:'',applicationUrl:'',sourceUrl:'',contactEmail:'',contactPhone:'',applicationInstructions:'',
  requirementsText:'',documentsText:'',verificationStatus:'unverified',status:'draft',notes:''
 };
 const sectors=['Education','Youth development','Healthcare','Community development','Food security','Environment','Women empowerment','Disability inclusion','Arts and culture','Sports','Economic empowerment','Human rights','General','Other'];
@@ -112,7 +112,6 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
  };
  const submitEditor=async(e:React.FormEvent)=>{
   e.preventDefault();if(!editor)return;
-  if(editor.status==='published'&&(editor.verificationStatus!=='verified'||!editor.sourceUrl.trim()&&!editor.applicationUrl.trim())){setError('To publish, choose Verified and supply an official source or application URL.');return;}
   const input=toRecord(editor);
   if(candidateEdit){
    await action('import',{id:candidateEdit.id,overrides:input},()=>{setCandidateEdit(null);setEditor(null);});
@@ -123,7 +122,6 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   await action('delete',{id:op.id});
  };
  const status=async(op:FundingOpportunity,value:'published'|'draft'|'archived')=>{
-  if(value==='published'&&(op.verificationStatus!=='verified'||!op.sourceUrl&&!op.applicationUrl)){setEditor(initialEditor(op));setError('Verify the record and provide an official source or application URL before publishing.');return;}
   await action('update',{id:op.id,status:value});
  };
  const probe=async()=>{
@@ -205,8 +203,8 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
      </section>}
      {section==='opportunities'&&<section className="oa-panel"><div className="oa-panel-heading"><div><div className="oa-kicker">SHARED FUNDING DATABASE</div><h3>{opportunities.length} structured opportunities</h3></div><button className="oa-primary" onClick={()=>{setCandidateEdit(null);setEditor({...emptyEditor});}}><Plus size={17}/> Add manually</button></div>
       <div className="oa-toolbar"><label className="oa-search"><Search size={17}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search funders and opportunities…" aria-label="Search opportunities"/></label><select value={filter} onChange={e=>setFilter(e.target.value)} aria-label="Filter opportunity status"><option value="all">All statuses</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></div>
-      <div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>OPPORTUNITY</th><th>FOCUS AREA</th><th>DEADLINE</th><th>VERIFICATION</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>{list.map(op=><tr key={op.id}><td><strong>{op.title}</strong><small>{op.funder}</small></td><td>{op.sector||'Other'}</td><td>{op.deadline||'Not supplied'}</td><td><span className={'oa-status '+(op.verificationStatus==='verified'?'verified':'neutral')}>{op.verificationStatus||'unverified'}</span></td><td><span className={'oa-status '+(op.status==='published'?'published':op.status==='archived'?'archived':'neutral')}>{op.status}</span></td><td><div className="oa-row-actions"><button onClick={()=>{setCandidateEdit(null);setEditor(initialEditor(op));}} title="Edit opportunity" aria-label={'Edit '+op.title} disabled={busy}><Edit3 size={17}/></button>
-       {op.status!=='published'?<button onClick={()=>void status(op,'published')} title="Publish reviewed opportunity" aria-label={'Publish '+op.title} disabled={busy}><CheckCircle2 size={17}/></button>:<button onClick={()=>void status(op,'draft')} title="Unpublish" aria-label={'Unpublish '+op.title} disabled={busy}><X size={17}/></button>}
+      <div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>OPPORTUNITY</th><th>FOCUS AREA</th><th>DEADLINE</th><th>SOURCE REVIEW</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>{list.map(op=><tr key={op.id}><td><strong>{op.title}</strong><small>{op.funder}</small></td><td>{op.sector||'Other'}</td><td>{op.deadline||'Not supplied'}</td><td><span className={'oa-status '+(op.verificationStatus==='verified'?'verified':'neutral')}>{op.verificationStatus==='unverified'?'Not checked':op.verificationStatus==='reviewed'?'Admin reviewed':op.verificationStatus||'Not checked'}</span></td><td><span className={'oa-status '+(op.status==='published'?'published':op.status==='archived'?'archived':'neutral')}>{op.status}</span></td><td><div className="oa-row-actions"><button onClick={()=>{setCandidateEdit(null);setEditor(initialEditor(op));}} title="Edit opportunity" aria-label={'Edit '+op.title} disabled={busy}><Edit3 size={17}/></button>
+       {op.status!=='published'?<button onClick={()=>void status(op,'published')} title="Publish opportunity" aria-label={'Publish '+op.title} disabled={busy}><CheckCircle2 size={17}/></button>:<button onClick={()=>void status(op,'draft')} title="Unpublish" aria-label={'Unpublish '+op.title} disabled={busy}><X size={17}/></button>}
        <button onClick={()=>void status(op,'archived')} title="Archive" aria-label={'Archive '+op.title} disabled={busy||op.status==='archived'}><FolderOpen size={17}/></button>
        <button onClick={()=>void action('reverify',{id:op.id})} title="Recheck source with Firecrawl" aria-label={'Recheck '+op.title} disabled={!op.sourceUrl||busy}><RefreshCw size={16}/></button>
        <button onClick={()=>void remove(op)} title="Delete permanently" aria-label={'Delete '+op.title} disabled={busy}><Trash2 size={17}/></button>
@@ -265,11 +263,11 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
     <div className="oa-modal-actions"><button className="oa-outline" onClick={()=>setSelectedUser(null)}>Close</button></div>
    </section></div>}
   {editor&&<div className="oa-modal-backdrop">
-    <section className="oa-modal" role="dialog" aria-modal="true" aria-labelledby="oa-editor-title"><div className="oa-modal-head"><div><span className="oa-kicker">{candidateEdit?'REVIEW EXTRACTED OPPORTUNITY':editor.id?'EDIT FUNDING RECORD':'MANUAL FUNDING ENTRY'}</span><h2 id="oa-editor-title">{candidateEdit?'Review and import':'Funding opportunity details'}</h2><p>Unknown values can stay blank. Publication requires admin verification against the official source.</p></div><button aria-label="Close editor" onClick={()=>{setEditor(null);setCandidateEdit(null);}}><X size={21}/></button></div>
+    <section className="oa-modal" role="dialog" aria-modal="true" aria-labelledby="oa-editor-title"><div className="oa-modal-head"><div><span className="oa-kicker">{candidateEdit?'REVIEW EXTRACTED OPPORTUNITY':editor.id?'EDIT FUNDING RECORD':'MANUAL FUNDING ENTRY'}</span><h2 id="oa-editor-title">{candidateEdit?'Review and import':'Funding opportunity details'}</h2><p>Add only what you know. You can publish without a website or verified source — use an email, phone number, or instructions instead.</p></div><button aria-label="Close editor" onClick={()=>{setEditor(null);setCandidateEdit(null);}}><X size={21}/></button></div>
     {error&&<div className="oa-editor-error" role="alert"><Bell size={16}/>{error}</div>}
      <form onSubmit={e=>void submitEditor(e)}><div className="oa-modal-scroll">
       <div className="oa-form-grid"><label className="full">Opportunity title *<input autoFocus required maxLength={280} value={editor.title} onChange={e=>setEditor({...editor,title:e.target.value})}/></label>
-        <label>Funder name *<input required maxLength={180} value={editor.funder} onChange={e=>setEditor({...editor,funder:e.target.value})}/></label>
+        <label>Funder name (optional)<input maxLength={180} value={editor.funder} onChange={e=>setEditor({...editor,funder:e.target.value})}/></label>
         <label>Funding sector<select value={editor.sector} onChange={e=>setEditor({...editor,sector:e.target.value})}>{sectors.map(s=><option key={s}>{s}</option>)}</select></label>
         <label className="full">Description<textarea rows={4} value={editor.description} onChange={e=>setEditor({...editor,description:e.target.value})}/></label>
         <label className="full">Eligibility conditions<textarea rows={3} value={editor.eligibility} onChange={e=>setEditor({...editor,eligibility:e.target.value})}/></label>
@@ -278,13 +276,16 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
         <label>Funding amount<input value={editor.amount} onChange={e=>setEditor({...editor,amount:e.target.value})} placeholder="Unknown if not specified"/></label>
         <label>Application deadline<input type="date" value={editor.deadline} onChange={e=>setEditor({...editor,deadline:e.target.value})}/></label>
         <label>Application round<input value={editor.round} onChange={e=>setEditor({...editor,round:e.target.value})} placeholder="e.g. 2027 annual cycle"/></label>
-        <label>Source URL<input type="url" value={editor.sourceUrl} onChange={e=>setEditor({...editor,sourceUrl:e.target.value})} placeholder="https://…"/></label>
-        <label className="full">Official application URL<input type="url" value={editor.applicationUrl} onChange={e=>setEditor({...editor,applicationUrl:e.target.value})} placeholder="https://…"/></label>
+         <label>Source website (optional)<input type="url" value={editor.sourceUrl} onChange={e=>setEditor({...editor,sourceUrl:e.target.value})} placeholder="https://…"/></label>
+         <label>Application website (optional)<input type="url" value={editor.applicationUrl} onChange={e=>setEditor({...editor,applicationUrl:e.target.value})} placeholder="https://…"/></label>
+         <label>Contact email (optional)<input type="email" maxLength={254} value={editor.contactEmail} onChange={e=>setEditor({...editor,contactEmail:e.target.value})} placeholder="applications@example.org"/></label>
+         <label>Contact phone / WhatsApp (optional)<input type="tel" maxLength={100} value={editor.contactPhone} onChange={e=>setEditor({...editor,contactPhone:e.target.value})} placeholder="+27 11 123 4567"/></label>
+         <label className="full">How to apply or contact the funder<textarea rows={3} maxLength={2500} value={editor.applicationInstructions} onChange={e=>setEditor({...editor,applicationInstructions:e.target.value})} placeholder="Email a proposal, phone for details, visit in person, or other instructions."/></label>
         <label className="full">Required documents (one per line)<textarea rows={3} value={editor.requirementsText} onChange={e=>setEditor({...editor,requirementsText:e.target.value})} placeholder="NPO registration certificate&#10;Financial statements"/></label>
         <label className="full">Supporting PDF links (one per line, format: Name | https://…)<textarea rows={3} value={editor.documentsText} onChange={e=>setEditor({...editor,documentsText:e.target.value})}/></label>
-        <label>Verification status<select value={editor.verificationStatus} onChange={e=>setEditor({...editor,verificationStatus:e.target.value})}><option value="unverified">Unverified</option><option value="reviewed">Reviewed, incomplete</option><option value="verified">Verified against official source</option></select></label>
+        <label>Source review (optional)<select value={editor.verificationStatus} onChange={e=>setEditor({...editor,verificationStatus:e.target.value})}><option value="unverified">Not checked</option><option value="reviewed">Reviewed by admin</option><option value="verified">Verified against source</option></select></label>
         <label>Publication status<select value={editor.status} onChange={e=>setEditor({...editor,status:e.target.value})} disabled={!!candidateEdit}><option value="draft">Draft / private</option><option value="published">Published to nonprofits</option><option value="archived">Archived</option></select></label>
-      </div><p className="oa-caveat">No extracted data is automatically published. Explicitly check the official source, eligibility, deadline and application URL. Duplicate URLs and matching funder/title/round identities are blocked on creation.</p>
+      </div><p className="oa-caveat">Manual records can be published without a website or verification status. Add contact information when available, and distinguish supplied details from independently verified facts. Duplicate funder/title/round entries are still blocked to keep the feed tidy.</p>
     </div><div className="oa-modal-actions">
       {editor.id&&!candidateEdit&&editor.documentsText.trim()&&<button type="button" className="oa-outline" disabled={busy} onClick={()=>void action('store-pdfs',{id:editor.id})}><CloudDownload size={16}/> Store source PDFs</button>}
       <button type="button" className="oa-outline" onClick={()=>{setEditor(null);setCandidateEdit(null);}}>Cancel</button>

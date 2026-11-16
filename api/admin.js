@@ -34,8 +34,6 @@ async function all(token,path,cap=500){
 }
 export async function insertOpportunity(token,input,{actor='admin'}={}) {
  const valid=normalizeOpportunity(input),id=identityKey(valid),canonical=canonicalKey(valid);
- if(valid.status==='published'&&(valid.verificationStatus!=='verified'||!valid.sourceUrl&&!valid.applicationUrl))
-  throw Object.assign(new Error('Official source URL and verified status are required before publishing.'),{status:400});
  const record={...valid,id,identityKey:id,canonicalKey:canonical,identityAliases:[id],canonicalAliases:canonical?[canonical]:[],
    createdAt:now(),updatedAt:now(),createdBy:actor};
  const ids=[{path:opportunityPath(id),fields:record},{path:'opportunityKeys/i_'+id,fields:{opportunityId:id,kind:'identity',createdAt:record.createdAt}}];
@@ -44,12 +42,10 @@ export async function insertOpportunity(token,input,{actor='admin'}={}) {
  try{await upsertFunder(token,record);}catch{/* Funding record remains canonical even if funder enrichment needs retry. */}
  return record;
 }
-async function saveOpportunity(token,input,actor){
+export async function saveOpportunity(token,input,actor){
  const id=requireId(input.id),existing=await firestore.get(token,opportunityPath(id));
  if(!existing)throw Object.assign(new Error('Opportunity not found.'),{status:404});
  const valid=normalizeOpportunity({...existing,...input},{...existing,source:existing.source,extractedAt:existing.extractedAt});
- if(valid.status==='published'&&(valid.verificationStatus!=='verified'||!valid.sourceUrl&&!valid.applicationUrl))
-  throw Object.assign(new Error('Set verification to Verified and supply an official source before publishing.'),{status:400});
  valid.documents=(valid.documents||[]).map(file=>{
   const preserved=(existing.documents||[]).find(old=>old.sourceUrl===file.sourceUrl&&old.status==='stored'&&old.storageKey);
   return preserved?{...file,storageKey:preserved.storageKey,status:'stored',size:preserved.size}:file;

@@ -1,7 +1,7 @@
 export type FundingOpportunity={
  id:string;title:string;funder:string;description:string;sector:string;eligibility:string;
  registration:string;coverage:string;amount:string;deadline:string;round:string;
- requirements:string[];applicationUrl:string;sourceUrl:string;documents:{title:string;sourceUrl:string;storageKey?:string;status?:string;size?:number}[];
+ requirements:string[];applicationUrl:string;sourceUrl:string;contactEmail?:string;contactPhone?:string;applicationInstructions?:string;documents:{title:string;sourceUrl:string;storageKey?:string;status?:string;size?:number}[];
  verificationStatus:string;status:string;published:boolean;lastCheckedAt?:string;
 };
 export type MatchResult={score:number;reasons:string[];gaps:string[];eligible:boolean;missingDocuments:string[]};
@@ -27,7 +27,7 @@ export function matchOpportunity(o:FundingOpportunity,p:Record<string,string>,fi
  if(shared.length>=2){score+=25;reasons.push('Shared themes: '+shared.slice(0,3).join(', '));}
  else if(shared.length){score+=13;reasons.push('Relevant programme keyword: '+shared[0]);}
  const region=String(o.coverage||'').toLowerCase(),home=String(p.province||'').toLowerCase(),areas=String(p.coverage||'').toLowerCase();
- if(!region||/south africa|national|nationwide|all provinces|countrywide/i.test(region)){score+=15;reasons.push('No restricted province identified in the record. Verify the source.');}
+ if(!region||/south africa|national|nationwide|all provinces|countrywide/i.test(region)){score+=15;reasons.push('No restricted province identified; confirm with the funder.');}
  else if((home&&region.includes(home))||(areas&&areas.includes(region))){score+=15;reasons.push('Matches your stated operating location.');}
  else {gaps.push('Location eligibility needs verification.');}
  const reg=String(o.registration||'').toLowerCase();
@@ -43,7 +43,7 @@ export function matchOpportunity(o:FundingOpportunity,p:Record<string,string>,fi
   if(/organisation profile|organizational profile/.test(req)&&!fileNames.some(f=>/organisation profile/.test(f)))missingDocuments.push('Organisation profile');
  }
  if(!o.eligibility)gaps.push('Eligibility criteria were not supplied or verified.');
- if(o.verificationStatus!=='verified')gaps.push('Source verification is incomplete.');
- if(!o.deadline)gaps.push('Deadline not supplied; check the official source.');
+ if(o.verificationStatus!=='verified')gaps.push('Opportunity details have not been independently verified.');
+ if(!o.deadline)gaps.push('Deadline not supplied; confirm with the funder.');
  return{score:Math.max(0,Math.min(95,score)),reasons,gaps,missingDocuments:[...new Set(missingDocuments)],eligible:score>=40};
 }

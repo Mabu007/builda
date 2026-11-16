@@ -112,6 +112,7 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
  };
  const submitEditor=async(e:React.FormEvent)=>{
   e.preventDefault();if(!editor)return;
+  if(editor.status==='published'&&(editor.verificationStatus!=='verified'||!editor.sourceUrl.trim()&&!editor.applicationUrl.trim())){setError('To publish, choose Verified and supply an official source or application URL.');return;}
   const input=toRecord(editor);
   if(candidateEdit){
    await action('import',{id:candidateEdit.id,overrides:input},()=>{setCandidateEdit(null);setEditor(null);});
@@ -133,7 +134,9 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
  };
  const begin=async()=>{
   if(busy||jobBusy)return;
-  setBusy(true);setError('');setNotice('');
+  if(discoverMode==='search'&&prompt.trim().length<8){setError('Enter at least 8 characters to describe the funding search.');return;}
+   if(discoverMode==='url'&&!/^https:\/\//i.test(url.trim())){setError('Enter a public HTTPS funding-source URL.');return;}
+   setBusy(true);setError('');setNotice('');
   try{
    const result=await adminApi<Job>(user,'start',{mode:discoverMode,query:prompt,url,limit});
    setJobActive(result.id);setNotice('Discovery job queued. Results will appear in the review queue.');setSection('discovery');
@@ -181,7 +184,7 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   </aside>
   <main className="oa-main"><header className="oa-header"><div><button className="oa-menu" aria-label="Open navigation" onClick={()=>setNavOpen(true)}><Menu size={20}/></button><span>ADMINISTRATION</span><ChevronRight size={15}/><strong>{sections.find(x=>x.id===section)?.label}</strong></div><div><span className="oa-admin-pill"><ShieldCheck size={15}/> Verified admin</span><span className="oa-avatar">{user.email?.slice(0,1).toUpperCase()||'A'}</span></div></header>
    <div className="oa-content">
-    {notice&&<div className="oa-feedback success"><CheckCircle2 size={17}/>{notice}<button aria-label="Dismiss" onClick={()=>setNotice('')}><X size={15}/></button></div>}
+    {notice&&<div className="oa-feedback success" role="status"><CheckCircle2 size={17}/>{notice}<button aria-label="Dismiss" onClick={()=>setNotice('')}><X size={15}/></button></div>}
     {error&&<div className="oa-feedback error" role="alert"><Bell size={17}/>{error}<button aria-label="Dismiss" onClick={()=>setError('')}><X size={15}/></button></div>}
     <div className="oa-page-title"><div><div className="oa-eyebrow"><span/> OPPOTRON ADMINISTRATION</div><h1>{section==='overview'?'Platform overview':section==='users'?'Users & organisations':section==='opportunities'?'Funding opportunities':'Discovery engine'}<span>.</span></h1><p>{section==='overview'?'Manage your platform’s funding inventory and discovery activity.':section==='users'?'Inspect registered accounts and the nonprofit records they have saved.':section==='opportunities'?'Create, verify, publish and maintain one shared source of funding records.':'Find funding calls with Firecrawl and Tavily, then review every extraction before publishing.'}</p></div><button className="oa-refresh" onClick={refresh} disabled={loading}><RefreshCw size={16}/>{loading?'Loading…':'Refresh'}</button></div>
     {section==='overview'&&<><div className="oa-metrics">
@@ -202,11 +205,11 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
      </section>}
      {section==='opportunities'&&<section className="oa-panel"><div className="oa-panel-heading"><div><div className="oa-kicker">SHARED FUNDING DATABASE</div><h3>{opportunities.length} structured opportunities</h3></div><button className="oa-primary" onClick={()=>{setCandidateEdit(null);setEditor({...emptyEditor});}}><Plus size={17}/> Add manually</button></div>
       <div className="oa-toolbar"><label className="oa-search"><Search size={17}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search funders and opportunities…" aria-label="Search opportunities"/></label><select value={filter} onChange={e=>setFilter(e.target.value)} aria-label="Filter opportunity status"><option value="all">All statuses</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></div>
-      <div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>OPPORTUNITY</th><th>FOCUS AREA</th><th>DEADLINE</th><th>VERIFICATION</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>{list.map(op=><tr key={op.id}><td><strong>{op.title}</strong><small>{op.funder}</small></td><td>{op.sector||'Other'}</td><td>{op.deadline||'Not supplied'}</td><td><span className={'oa-status '+(op.verificationStatus==='verified'?'verified':'neutral')}>{op.verificationStatus||'unverified'}</span></td><td><span className={'oa-status '+(op.status==='published'?'published':op.status==='archived'?'archived':'neutral')}>{op.status}</span></td><td><div className="oa-row-actions"><button onClick={()=>{setCandidateEdit(null);setEditor(initialEditor(op));}} title="Edit opportunity"><Edit3 size={17}/></button>
-       {op.status!=='published'?<button onClick={()=>void status(op,'published')} title="Publish reviewed opportunity"><CheckCircle2 size={17}/></button>:<button onClick={()=>void status(op,'draft')} title="Unpublish"><X size={17}/></button>}
-       <button onClick={()=>void status(op,'archived')} title="Archive" disabled={op.status==='archived'}><FolderOpen size={17}/></button>
-       <button onClick={()=>void action('reverify',{id:op.id})} title="Recheck source with Firecrawl" disabled={!op.sourceUrl||busy}><RefreshCw size={16}/></button>
-       <button onClick={()=>void remove(op)} title="Delete permanently"><Trash2 size={17}/></button>
+      <div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>OPPORTUNITY</th><th>FOCUS AREA</th><th>DEADLINE</th><th>VERIFICATION</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>{list.map(op=><tr key={op.id}><td><strong>{op.title}</strong><small>{op.funder}</small></td><td>{op.sector||'Other'}</td><td>{op.deadline||'Not supplied'}</td><td><span className={'oa-status '+(op.verificationStatus==='verified'?'verified':'neutral')}>{op.verificationStatus||'unverified'}</span></td><td><span className={'oa-status '+(op.status==='published'?'published':op.status==='archived'?'archived':'neutral')}>{op.status}</span></td><td><div className="oa-row-actions"><button onClick={()=>{setCandidateEdit(null);setEditor(initialEditor(op));}} title="Edit opportunity" aria-label={'Edit '+op.title} disabled={busy}><Edit3 size={17}/></button>
+       {op.status!=='published'?<button onClick={()=>void status(op,'published')} title="Publish reviewed opportunity" aria-label={'Publish '+op.title} disabled={busy}><CheckCircle2 size={17}/></button>:<button onClick={()=>void status(op,'draft')} title="Unpublish" aria-label={'Unpublish '+op.title} disabled={busy}><X size={17}/></button>}
+       <button onClick={()=>void status(op,'archived')} title="Archive" aria-label={'Archive '+op.title} disabled={busy||op.status==='archived'}><FolderOpen size={17}/></button>
+       <button onClick={()=>void action('reverify',{id:op.id})} title="Recheck source with Firecrawl" aria-label={'Recheck '+op.title} disabled={!op.sourceUrl||busy}><RefreshCw size={16}/></button>
+       <button onClick={()=>void remove(op)} title="Delete permanently" aria-label={'Delete '+op.title} disabled={busy}><Trash2 size={17}/></button>
       </div></td></tr>)}</tbody></table></div>
       {hasMoreOpportunities&&<div className="oa-caveat">Showing the first 1,000 opportunities. Additional records may exist.</div>}
        {!list.length&&<div className="oa-empty">No matching records. Add a funding opportunity or discover one from a source URL.</div>}
@@ -263,7 +266,8 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
    </section></div>}
   {editor&&<div className="oa-modal-backdrop">
     <section className="oa-modal" role="dialog" aria-modal="true" aria-labelledby="oa-editor-title"><div className="oa-modal-head"><div><span className="oa-kicker">{candidateEdit?'REVIEW EXTRACTED OPPORTUNITY':editor.id?'EDIT FUNDING RECORD':'MANUAL FUNDING ENTRY'}</span><h2 id="oa-editor-title">{candidateEdit?'Review and import':'Funding opportunity details'}</h2><p>Unknown values can stay blank. Publication requires admin verification against the official source.</p></div><button aria-label="Close editor" onClick={()=>{setEditor(null);setCandidateEdit(null);}}><X size={21}/></button></div>
-    <form onSubmit={e=>void submitEditor(e)}><div className="oa-modal-scroll">
+    {error&&<div className="oa-editor-error" role="alert"><Bell size={16}/>{error}</div>}
+     <form onSubmit={e=>void submitEditor(e)}><div className="oa-modal-scroll">
       <div className="oa-form-grid"><label className="full">Opportunity title *<input autoFocus required maxLength={280} value={editor.title} onChange={e=>setEditor({...editor,title:e.target.value})}/></label>
         <label>Funder name *<input required maxLength={180} value={editor.funder} onChange={e=>setEditor({...editor,funder:e.target.value})}/></label>
         <label>Funding sector<select value={editor.sector} onChange={e=>setEditor({...editor,sector:e.target.value})}>{sectors.map(s=><option key={s}>{s}</option>)}</select></label>

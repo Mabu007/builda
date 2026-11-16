@@ -113,3 +113,21 @@ export async function storeFundingPdfs(id,documents=[]){
  }
  return [...updates,...documents.slice(3).map(doc=>({...doc,status:'external',storageKey:''}))];
 }
+
+/** Live, on-demand connectivity check. Does not expose tokens, results or page content. */
+export async function probeDiscoveryProviders(){
+ const results={};
+ const checks=[
+  {name:'firecrawl',configured:!!process.env.FIRECRAWL_API_KEY,fn:()=>provider('https://api.firecrawl.dev/v2/search',process.env.FIRECRAWL_API_KEY,
+   {query:'South Africa NPO CSI grant',limit:1,sources:[{type:'web'}]}, {timeout:14000,attempts:1})},
+  {name:'tavily',configured:!!process.env.TAVILY_API_KEY,fn:()=>provider('https://api.tavily.com/search',process.env.TAVILY_API_KEY,
+   {query:'South Africa NPO grant applications',max_results:1,search_depth:'basic',include_answer:false,include_images:false},
+   {timeout:14000,attempts:1})}
+ ];
+ for(const check of checks){
+  if(!check.configured){results[check.name]={ok:false,message:'API key missing in this environment'};continue;}
+  try{await check.fn();results[check.name]={ok:true,message:'Authenticated provider request succeeded'};}
+  catch(error){results[check.name]={ok:false,message:String(error.message||'Provider failed').slice(0,150)};}
+ }
+ return results;
+}

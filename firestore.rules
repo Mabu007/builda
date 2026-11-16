@@ -63,6 +63,32 @@ service cloud.firestore {
           allow update: if false;
         }
       }
+      match /savedFunding/{id} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['opportunityId','savedAt','notes'])
+          && request.resource.data.opportunityId == id
+          && request.resource.data.get('notes','') is string
+          && request.resource.data.get('notes','').size() <= 1200;
+      }
+      match /applications/{id} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['opportunityId','status','notes','deadline','updatedAt','createdAt','requirements'])
+          && request.resource.data.opportunityId == id
+          && request.resource.data.status in ['preparing','ready','submitted','awarded','unsuccessful']
+          && request.resource.data.get('notes','') is string
+          && request.resource.data.get('notes','').size() <= 4000;
+      }
+      match /fundingDrafts/{id} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['title','content','opportunityId','createdAt','updatedAt'])
+          && request.resource.data.title is string
+          && request.resource.data.title.size() <= 180
+          && request.resource.data.content is string
+          && request.resource.data.content.size() <= 60000;
+      }
       match /settings/{docId} {
         allow read: if isOwner(uid);
         allow create, update: if isOwner(uid) && docId == 'preferences'
@@ -103,9 +129,18 @@ service cloud.firestore {
       }
     }
     match /opportunities/{id} {
-      allow read: if resource.data.published == true || isAdmin();
+      allow read: if isAdmin() || (signedIn() && resource.data.published == true);
+      // All writes are server-admin operations authenticated with an admin custom claim.
+      allow create, update, delete: if isAdmin();
+    }
+    match /funders/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.published == true);
       allow write: if isAdmin();
     }
+    match /opportunityKeys/{id} { allow read, write: if isAdmin(); }
+    match /discoveryJobs/{id} { allow read, write: if isAdmin(); }
+    match /discoveryCandidates/{id} { allow read, write: if isAdmin(); }
+    match /discoveryLocks/{id} { allow read, write: if isAdmin(); }
     // Retired public job intake: unauthenticated submissions must not reach Firestore.
     match /jobs/{id} { allow read, write: if isAdmin(); }
     match /{document=**} { allow read, write: if false; }

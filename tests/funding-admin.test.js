@@ -17,12 +17,41 @@ test('shared funding database identity is deterministic across source URLs',()=>
  assert.equal(canonicalKey({...one,sourceUrl:'https://example.org/a?utm_source=mail'}),canonicalKey(one));
 });
 test('missing and unverified extraction details are not fabricated',()=>{
- assert.throws(()=>normalizeOpportunity({title:'Unknown grant'}),/required/);
+ assert.throws(()=>normalizeOpportunity({funder:'Helping Foundation'}),/title is required/i);
  const record=normalizeOpportunity({funder:'Helping Foundation',title:'School grant',sourceUrl:'https://example.org/funding'});
  assert.equal(record.amount,'');assert.equal(record.deadline,'');assert.equal(record.verificationStatus,'unverified');
  assert.equal(record.status,'draft');assert.equal(record.published,false);
  assert.throws(()=>normalizeOpportunity({title:'Grant',funder:'F',deadline:'tomorrow'}),/Deadline/);
 });
+test('manual funding entries may omit funder and URLs and use email or phone instead',()=>{
+ const record=normalizeOpportunity({title:'Community outreach funding',status:'published',
+  contactEmail:'grants@example.org',contactPhone:'+27 11 222 3333',
+  applicationInstructions:'Email your application and phone the organisation if needed.'});
+ assert.equal(record.published,true);
+ assert.equal(record.status,'published');
+ assert.equal(record.verificationStatus,'unverified');
+ assert.equal(record.funder,'Not specified');
+ assert.equal(record.sourceUrl,'');
+ assert.equal(record.applicationUrl,'');
+ assert.equal(record.canonicalUrl,'');
+ assert.equal(record.contactEmail,'grants@example.org');
+ assert.equal(record.contactPhone,'+27 11 222 3333');
+ assert.match(record.applicationInstructions,/Email your application/);
+});
+test('source pages are never silently treated as application pages',()=>{
+ const source=normalizeOpportunity({title:'Scholarship',sourceUrl:'https://grant.example.org/news'});
+ assert.equal(source.sourceUrl,'https://grant.example.org/news');
+ assert.equal(source.applicationUrl,'');
+ const application=normalizeOpportunity({title:'Scholarship',applicationUrl:'https://grant.example.org/apply'});
+ assert.equal(application.sourceUrl,'');
+ assert.equal(application.applicationUrl,'https://grant.example.org/apply');
+});
+test('malformed emails, invalid calendar dates and unsafe URLs are rejected',()=>{
+ assert.throws(()=>normalizeOpportunity({title:'Grant',contactEmail:'someone@@bad'}),/email/i);
+ assert.throws(()=>normalizeOpportunity({title:'Grant',deadline:'2026-02-31'}),/Deadline/);
+ assert.throws(()=>normalizeOpportunity({title:'Grant',applicationUrl:'javascript:alert(1)'}),/HTTPS/i);
+});
+
 test('expired grants are excluded and non-matching sectors do not qualify',()=>{
  const expired=normalizeOpportunity({title:'Grant',funder:'Foundation',deadline:'2023-01-01'});
  assert.equal(isExpired(expired),true);

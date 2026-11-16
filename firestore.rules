@@ -9,7 +9,8 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly([
         'ownerId','email','name','registration','phone','tradingName','contactPerson',
         'whatsapp','description','category','province','city','coverage','services',
-        'cidb','experience','projects','goals','organizationType','updatedAt'
+        'cidb','experience','projects','goals','organizationType','updatedAt',
+        'npcNumber','pboNumber','yearEstablished','website','beneficiaries','fundingPriorities'
       ])
       && request.resource.data.ownerId == request.auth.uid
       && request.resource.data.get('organizationType', '') in ['', 'business', 'npo']
@@ -19,7 +20,13 @@ service cloud.firestore {
       && request.resource.data.get('email','').size() <= 254
       && request.resource.data.get('description','').size() <= 4000
       && request.resource.data.get('services','').size() <= 4000
-      && request.resource.data.get('projects','').size() <= 4000;
+      && request.resource.data.get('projects','').size() <= 4000
+      && smallString(request.resource.data.get('npcNumber',''), 140)
+      && smallString(request.resource.data.get('pboNumber',''), 140)
+      && smallString(request.resource.data.get('yearEstablished',''), 20)
+      && smallString(request.resource.data.get('website',''), 280)
+      && smallString(request.resource.data.get('beneficiaries',''), 1500)
+      && smallString(request.resource.data.get('fundingPriorities',''), 2000);
     }
     match /contractors/{uid} {
       allow read: if isOwner(uid) || isAdmin();

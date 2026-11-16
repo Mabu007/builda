@@ -35,7 +35,8 @@ async function all(token,path,cap=500){
 export async function insertOpportunity(token,input,{actor='admin'}={}) {
  const valid=normalizeOpportunity(input),id=identityKey(valid),canonical=canonicalKey(valid);
  if(valid.status==='published'&&valid.verificationStatus!=='verified')throw Object.assign(new Error('Verify this opportunity against its official source before publishing.'),{status:400});
- const record={...valid,id,identityKey:id,canonicalKey:canonical,createdAt:now(),updatedAt:now(),createdBy:actor};
+ const record={...valid,id,identityKey:id,canonicalKey:canonical,identityAliases:[id],canonicalAliases:canonical?[canonical]:[],
+   createdAt:now(),updatedAt:now(),createdBy:actor};
  const ids=[{path:opportunityPath(id),fields:record},{path:'opportunityKeys/i_'+id,fields:{opportunityId:id,kind:'identity',createdAt:record.createdAt}}];
  if(canonical)ids.push({path:'opportunityKeys/u_'+canonical,fields:{opportunityId:id,kind:'url',createdAt:record.createdAt}});
  await firestore.atomicCreate(token,ids);
@@ -47,8 +48,18 @@ async function saveOpportunity(token,input,actor){
  if(!existing)throw Object.assign(new Error('Opportunity not found.'),{status:404});
  const valid=normalizeOpportunity({...existing,...input},{...existing,source:existing.source,extractedAt:existing.extractedAt});
  if(valid.status==='published'&&valid.verificationStatus!=='verified')throw Object.assign(new Error('Set verification to Verified after reviewing the official source before publishing.'),{status:400});
- const update={...valid,updatedAt:now(),updatedBy:actor};
- await firestore.update(token,opportunityPath(id),update);
+ const newIdentity=identityKey(valid),newCanonical=canonicalKey(valid);
+ const oldAliases=Array.isArray(existing.identityAliases)?existing.identityAliases:[existing.identityKey||id];
+ const urlAliases=Array.isArray(existing.canonicalAliases)?existing.canonicalAliases:(existing.canonicalKey?[existing.canonicalKey]:[]);
+ const newKeys=[];
+ if(!oldAliases.includes(newIdentity))newKeys.push({path:'opportunityKeys/i_'+newIdentity,fields:{opportunityId:id,kind:'identity',createdAt:now()}});
+ if(newCanonical&&!urlAliases.includes(newCanonical))newKeys.push({path:'opportunityKeys/u_'+newCanonical,fields:{opportunityId:id,kind:'url',createdAt:now()}});
+ const update={...valid,source:existing.source||'manual',createdAt:existing.createdAt,
+   identityKey:existing.identityKey||id,canonicalKey:existing.canonicalKey||'',
+   identityAliases:[...new Set([...oldAliases,newIdentity])].slice(0,80),
+   canonicalAliases:[...new Set([...urlAliases,...(newCanonical?[newCanonical]:[])])].slice(0,80),
+   updatedAt:now(),updatedBy:actor};
+ await firestore.atomicUpdate(token,opportunityPath(id),{...existing,...update},newKeys);
  try{await upsertFunder(token,{...existing,...update});}catch{/* Funder enrichment is non-critical. */}
  return {...existing,...update};
 }
@@ -56,8 +67,8 @@ async function removeOpportunity(token,id) {
  requireId(id);
  const existing=await firestore.get(token,opportunityPath(id));if(!existing)throw Object.assign(new Error('Opportunity not found.'),{status:404});
  await firestore.remove(token,opportunityPath(id));
- for(const key of ['i_'+(existing.identityKey||id),existing.canonicalKey?'u_'+existing.canonicalKey:'']){
-  if(!key)continue;
+ for(const key of [...(Array.isArray(existing.identityAliases)?existing.identityAliases:[existing.identityKey||id]).map(x=>'i_'+x),
+                     ...(Array.isArray(existing.canonicalAliases)?existing.canonicalAliases:(existing.canonicalKey?[existing.canonicalKey]:[])).map(x=>'u_'+x)]) {
   try{await firestore.remove(token,'opportunityKeys/'+key);}catch{}
  }
  return {deleted:true,id};

@@ -73,7 +73,7 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
     <select aria-label="Funding sector" value={sector} onChange={e=>setSector(e.target.value)}><option value="">All focus areas</option>{sectors.map(x=><option key={x}>{x}</option>)}</select></div>
    {loading?<div className="bo-skeleton-wrap">{[1,2,3].map(i=><div className="bo-skeleton" key={i}/>)}</div>:
     visible.length?<div className="fu-opportunity-grid">{visible.map(({op,match:m})=><article className="fu-opportunity-card" key={op.id}>
-     <div className="fu-card-overline"><span><HeartHandshake size={15}/> {op.sector||'Funding'}</span><span>{opportunityExpired(op)?'Deadline passed':op.verificationStatus==='verified'?'Source checked':op.sourceUrl||op.applicationUrl?'Details unverified':'Admin-listed'}</span></div>
+     <div className="fu-card-overline"><span><HeartHandshake size={15}/> {op.sector||'Funding'}</span><span>{opportunityExpired(op)?'Deadline passed':!op.sourceUrl&&!op.applicationUrl?'Admin-listed':op.verificationStatus==='verified'?'Source checked':'Details unverified'}</span></div>
      <h3>{op.title}</h3><p className="fu-funder">{op.funder}</p>
      <p className="fu-desc">{op.description||'Description not provided. Contact the funder for more information.'}</p>
      <div className="fu-match-summary"><Sparkles size={17}/><span><strong>{readiness.personalised?m.score+'/95 profile relevance':'Published funding call'}</strong><small>{readiness.personalised?(m.reasons[0]||'Check funder eligibility'):'Personalised ordering starts at 30% profile completion'}</small></span></div>

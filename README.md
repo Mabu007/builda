@@ -19,7 +19,7 @@ From the regular `/login` page, use the small **Admin access** link to open `/ad
 
 - **Overview**: organisation count, opportunity count, published/active counts, review queue, activity. Large dataset counts are marked partial after the current cap.
 - **Users**: Firestore organisation profiles. Full Firebase Authentication users (including accounts without profiles), actual signup/last-login timestamps and claims require a **Firebase service account**. The dashboard provides user search and account/profile detail inspection. It does not claim a subscription state without a provider.
-- **Opportunities**: admin-only manual creation/editing, verification, publication, unpublication, archiving, deletion, deduplication, and bounded PDF downloads into Cloudflare R2.
+- **Opportunities**: admin-only manual creation/editing, publication, unpublication, archiving, deletion, duplicate prevention and bounded PDF downloads. **A website, external verification and a funder name are optional for manual records**; title is required. Admins can supply a contact email, telephone/WhatsApp or application instructions instead. The application link is never inferred from an informational source URL.
 - **Discovery**: Firecrawl v2 search first, Tavily fallback for search, Firecrawl v2 JSON extraction for source URLs. Discovery jobs, candidates, errors, source URLs, progress, and explicit import/review actions persist in Firestore. **Imported records start in draft/unverified state.**
 - **Provider test**: the “Test Firecrawl & Tavily” action makes **real, small authenticated server-side calls** (these consume provider quota). The status is visible only to a verified admin.
 
@@ -89,7 +89,7 @@ The Admin Discovery interface processes individual pages on demand and displays 
 4. Use **Discovery → Test Firecrawl & Tavily** and inspect each real provider response.
 5. Run a 5-result search and then a direct source URL extraction. Verify that candidates are saved but not published automatically.
 6. Review an extracted funding call and import it as draft. Confirm duplicates are rejected when reimporting.
-7. Mark a validated official source as Verified, then publish it. Check that a newly registered NPO with an **empty profile** can see it on Home and Opportunities; complete 3 of 10 profile fields, confirm ranking changes without hiding other calls, then save, open the official application URL and prepare a document.
+7. Publish one **manual, unverified funding call with no website**, using only a title and optionally an email/phone contact. Confirm a new NPO with an empty profile sees it; the contact method and instructions appear in opportunity details and application tracking. Add 3 of 10 profile fields and confirm ranking changes without hiding other calls. Separately verify and publish a website-sourced call.
 8. Try signing in as another account and confirm saved opportunities, applications and drafts do not cross accounts.
 
 ## Security and important limits

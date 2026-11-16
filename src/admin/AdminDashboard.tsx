@@ -157,10 +157,21 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   const interval=window.setInterval(()=>{void advance(jobActive);},2600);
   return()=>window.clearInterval(interval);
  },[access,jobActive]);
+ useEffect(()=>{
+  if(!editor&&!selectedUser)return;
+  const previous=document.body.style.overflow;document.body.style.overflow='hidden';
+  const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape'&&!busy){setEditor(null);setCandidateEdit(null);setSelectedUser(null);}};
+  window.addEventListener('keydown',onKey);
+  return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',onKey);};
+ },[Boolean(editor),Boolean(selectedUser),busy]);
  const recent=(jobs||[]).find(job=>job.id===jobActive);
+ const filteredUsers=users.filter(record=>[record.email,record.uid,record.organisation?.name,record.organisation?.category,record.organisation?.province]
+   .some(value=>String(value||'').toLowerCase().includes(userSearch.trim().toLowerCase())));
+ const reviewableCandidates=candidates.filter(candidate=>candidate.status!=='discarded');
  const list=opportunities.filter(op=>(filter==='all'||op.status===filter)&&(!search.trim()||[op.title,op.funder,op.sector].join(' ').toLowerCase().includes(search.toLowerCase())));
  const leave=async()=>{if(auth)await signOut(auth);onExit();};
  if(access==='checking')return <div className="oa-guard"><div className="oa-guard-icon"><ShieldCheck size={27}/></div><h2>Checking administrator permissions…</h2></div>;
+ if(access==='failed')return <div className="oa-guard"><div className="oa-guard-icon"><Bell size={28}/></div><h2>Could not verify administrator access</h2><p>The network or admin server did not respond. Your Firebase role has not been changed.</p><button className="bo-primary" onClick={()=>void check()}>Try again <RefreshCw size={16}/></button></div>;
  if(access==='denied')return <div className="oa-guard"><div className="oa-guard-icon"><LockKeyhole size={28}/></div><h2>Administrator access required</h2><p>This dashboard is protected by a Firebase admin custom claim. Sign in with the Firebase account that has admin access. If your role was just granted, refresh your session.</p><button className="bo-primary" onClick={()=>void check()}>Refresh permissions <RefreshCw size={16}/></button><button className="oa-outline" onClick={onWorkspace}>Return to your workspace <ArrowRight size={16}/></button></div>;
  return <div className="oa-shell">
   {navOpen&&<button className="oa-scrim" aria-label="Close admin navigation" onClick={()=>setNavOpen(false)}/>}
@@ -182,11 +193,14 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
        {label:'Pending review',value:summary?.pendingReviews,icon:<FileText size={20}/>},
        {label:'Discovery jobs',value:summary?.discoveryJobs,icon:<Compass size={20}/>}]).map(item=><div className="oa-metric" key={item.label}><div><span>{item.label}</span>{item.icon}</div><strong>{item.value??'—'}</strong><small>{item.label==='Active deadlines'?'Published, deadline not expired':item.label==='Organisation records'?'NPO profiles in Firestore':item.label==='Registered users'?'Requires Firebase service account':'Shared funding administration'}</small></div>)}
     </div><div className="oa-quick-grid"><button onClick={()=>go('opportunities')}><span><HeartHandshake size={23}/></span><strong>Manage the funding database</strong><small>Review and publish opportunities</small><ArrowRight size={18}/></button><button onClick={()=>go('discovery')}><span><Compass size={23}/></span><strong>Run a funding discovery</strong><small>Search with Firecrawl, fallback Tavily</small><ArrowRight size={18}/></button><button onClick={()=>go('users')}><span><Users size={23}/></span><strong>Review organisations</strong><small>See onboarding and account details</small><ArrowRight size={18}/></button></div>{summary?.partial&&<p className="oa-caveat">Counts are calculated from the first 1,000 organisation and opportunity records. Pagination is required for larger volumes.</p>}</>}
-    {section==='users'&&<section className="oa-panel"><div className="oa-panel-heading"><div><div className="oa-kicker">REGISTERED ACCOUNTS</div><h3>{users.length} accounts shown</h3></div></div>
-      {usersWarning&&<div className="oa-caveat">{usersWarning}</div>}
-      <div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>ACCOUNT</th><th>ORGANISATION</th><th>REGISTERED</th><th>LAST ACTIVITY</th><th>SUBSCRIPTION</th></tr></thead><tbody>{users.map(record=><tr key={record.uid}><td><strong>{record.email||'Email unavailable'}</strong><small>{record.uid}</small></td><td><strong>{String(record.organisation?.name||'No profile')}</strong><small>{String(record.organisation?.category||'Focus area missing')}</small></td><td>{dateText(record.createdAt)}</td><td>{dateText(record.lastLoginAt||String(record.organisation?._updatedAt||''))}</td><td><span className="oa-status neutral">{String(record.organisation?.subscriptionStatus||'Not configured')}</span></td></tr>)}</tbody></table></div>
-    </section>}
-    {section==='opportunities'&&<section className="oa-panel"><div className="oa-panel-heading"><div><div className="oa-kicker">SHARED FUNDING DATABASE</div><h3>{opportunities.length} structured opportunities</h3></div><button className="oa-primary" onClick={()=>{setCandidateEdit(null);setEditor({...emptyEditor});}}><Plus size={17}/> Add manually</button></div>
+    {section==='users'&&<section className="oa-panel"><div className="oa-panel-heading"><div><div className="oa-kicker">REGISTERED ACCOUNTS</div><h3>{users.length} accounts loaded</h3><p>Search by email, organisation, UID, focus area or province.</p></div></div>
+       {usersWarning&&<div className="oa-caveat">{usersWarning}</div>}
+       <div className="oa-toolbar"><label className="oa-search"><Search size={17}/><input value={userSearch} onChange={e=>setUserSearch(e.target.value)} aria-label="Find registered user" placeholder="Find a user or organisation…"/></label></div>
+       {loading&&!users.length?<div className="oa-empty" role="status">Loading registered accounts…</div>:filteredUsers.length?
+       <div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>ACCOUNT</th><th>ORGANISATION</th><th>REGISTERED</th><th>LAST LOGIN</th><th>ACCOUNT STATUS</th><th>DETAILS</th></tr></thead><tbody>{filteredUsers.map(record=><tr key={record.uid}><td><strong>{record.email||'Email unavailable'}</strong><small>{record.uid}</small></td><td><strong>{String(record.organisation?.name||'No profile yet')}</strong><small>{String(record.organisation?.category||'Focus area not supplied')}</small></td><td>{dateText(record.createdAt)}</td><td>{dateText(record.lastLoginAt||String(record.organisation?._updatedAt||''))}</td><td><span className={'oa-status '+(record.disabled?'archived':'verified')}>{record.disabled?'Disabled':'Active'}</span></td><td><button className="oa-small-link" onClick={()=>setSelectedUser(record)}>View details <ArrowRight size={14}/></button></td></tr>)}</tbody></table></div>:
+       <div className="oa-empty">{userSearch?'No users match your search.':'No registered accounts found.'}</div>}
+     </section>}
+     {section==='opportunities'&&<section className="oa-panel"><div className="oa-panel-heading"><div><div className="oa-kicker">SHARED FUNDING DATABASE</div><h3>{opportunities.length} structured opportunities</h3></div><button className="oa-primary" onClick={()=>{setCandidateEdit(null);setEditor({...emptyEditor});}}><Plus size={17}/> Add manually</button></div>
       <div className="oa-toolbar"><label className="oa-search"><Search size={17}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search funders and opportunities…" aria-label="Search opportunities"/></label><select value={filter} onChange={e=>setFilter(e.target.value)} aria-label="Filter opportunity status"><option value="all">All statuses</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></div>
       <div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>OPPORTUNITY</th><th>FOCUS AREA</th><th>DEADLINE</th><th>VERIFICATION</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>{list.map(op=><tr key={op.id}><td><strong>{op.title}</strong><small>{op.funder}</small></td><td>{op.sector||'Other'}</td><td>{op.deadline||'Not supplied'}</td><td><span className={'oa-status '+(op.verificationStatus==='verified'?'verified':'neutral')}>{op.verificationStatus||'unverified'}</span></td><td><span className={'oa-status '+(op.status==='published'?'published':op.status==='archived'?'archived':'neutral')}>{op.status}</span></td><td><div className="oa-row-actions"><button onClick={()=>{setCandidateEdit(null);setEditor(initialEditor(op));}} title="Edit opportunity"><Edit3 size={17}/></button>
        {op.status!=='published'?<button onClick={()=>void status(op,'published')} title="Publish reviewed opportunity"><CheckCircle2 size={17}/></button>:<button onClick={()=>void status(op,'draft')} title="Unpublish"><X size={17}/></button>}
@@ -194,7 +208,8 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
        <button onClick={()=>void action('reverify',{id:op.id})} title="Recheck source with Firecrawl" disabled={!op.sourceUrl||busy}><RefreshCw size={16}/></button>
        <button onClick={()=>void remove(op)} title="Delete permanently"><Trash2 size={17}/></button>
       </div></td></tr>)}</tbody></table></div>
-      {!list.length&&<div className="oa-empty">No matching records. Add a funding opportunity or discover one from a source URL.</div>}
+      {hasMoreOpportunities&&<div className="oa-caveat">Showing the first 1,000 opportunities. Additional records may exist.</div>}
+       {!list.length&&<div className="oa-empty">No matching records. Add a funding opportunity or discover one from a source URL.</div>}
     </section>}
     {section==='discovery'&&<div className="oa-discovery">
       <section className="oa-panel oa-discovery-form"><div className="oa-panel-heading"><div><div className="oa-kicker">SOURCE DISCOVERY</div><h3>Find funding calls</h3><p>Search the web or extract one official funding page. Every result enters review before publication.</p></div></div>
@@ -219,26 +234,37 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
         {!jobs.length&&<div className="oa-empty">No discovery jobs yet. Search for funding calls to start your research queue.</div>}
       </section>
       <section className="oa-panel oa-candidates"><div className="oa-panel-heading"><div><div className="oa-kicker">REVIEW & VERIFICATION</div><h3>Extracted candidates</h3></div></div>
-       {candidates.filter(c=>c.status!=='discarded').sort((a,b)=>b.extractedAt.localeCompare(a.extractedAt)).slice(0,100).map(candidate=><div className="oa-candidate" key={candidate.id}>
+       {reviewableCandidates.sort((a,b)=>b.extractedAt.localeCompare(a.extractedAt)).slice(0,100).map(candidate=><div className="oa-candidate" key={candidate.id}>
          <div className="oa-candidate-main"><span className={'oa-status '+(candidate.status==='imported'?'published':candidate.status==='review'?'verified':'neutral')}>{candidate.status}</span><h4>{candidate.title||'Unidentified funding page'}</h4><a href={candidate.sourceUrl} target="_blank" rel="noopener noreferrer">{candidate.sourceUrl} <ExternalLink size={13}/></a>
           {candidate.data?.funder&&<small>Funder: {candidate.data.funder} · {candidate.data.sector||'Sector unknown'}</small>}
           {candidate.duplicateOf&&<small>Possible duplicate: {candidate.duplicateOf}</small>}
           {candidate.error&&<p className="oa-job-error">{candidate.error}</p>}
           {candidate.notice&&<p>{candidate.notice}</p>}
          </div><div className="oa-candidate-actions">
-          {candidate.data&&candidate.status!=='imported'&&<button className="oa-primary" disabled={busy} onClick={()=>{setCandidateEdit(candidate);setEditor(initialEditor(candidate.data||{}));}}>Review & import <ArrowRight size={15}/></button>}
+          {candidate.data&&candidate.status!=='imported'&&<button className="oa-primary" disabled={busy} onClick={()=>{setCandidateEdit(candidate);setEditor(initialEditor({...candidate.data,sourceUrl:candidate.sourceUrl}));}}>Review & import <ArrowRight size={15}/></button>}
           {candidate.status==='imported'&&<span className="oa-status published"><Check size={14}/> Imported</span>}
           {!['discarded','imported'].includes(candidate.status)&&<button className="oa-outline" disabled={busy} onClick={()=>void action('discard',{id:candidate.id})}>Discard</button>}
          </div></div>)}
-       {!candidates.length&&<div className="oa-empty">Extracted opportunities will appear here, ready for verification and editing before you publish them.</div>}
+       {!reviewableCandidates.length&&<div className="oa-empty">Extracted opportunities will appear here, ready for verification and editing before you publish them.</div>}
       </section>
     </div>}
    </div>
   </main>
-  {editor&&<div className="oa-modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget&&!busy){setEditor(null);setCandidateEdit(null);}}}>
+  {selectedUser&&<div className="oa-modal-backdrop"><section className="oa-modal oa-user-modal" role="dialog" aria-modal="true" aria-labelledby="oa-user-title">
+    <div className="oa-modal-head"><div><span className="oa-kicker">REGISTERED ACCOUNT</span><h2 id="oa-user-title">{selectedUser.organisation?.name?String(selectedUser.organisation.name):'Account details'}</h2><p>Firebase account and saved organisation metadata.</p></div><button aria-label="Close account details" onClick={()=>setSelectedUser(null)}><X size={21}/></button></div>
+    <div className="oa-modal-scroll"><dl className="oa-user-details">{([
+      ['Email address',selectedUser.email],['Firebase UID',selectedUser.uid],['Account status',selectedUser.disabled?'Disabled':'Active'],
+      ['Registered',dateText(selectedUser.createdAt)],['Last login',dateText(selectedUser.lastLoginAt)],
+      ['Organisation',selectedUser.organisation?.name],['Focus area',selectedUser.organisation?.category],
+      ['Province',selectedUser.organisation?.province],['Registration number',selectedUser.organisation?.registration],
+      ['Contact person',selectedUser.organisation?.contactPerson],['Website',selectedUser.organisation?.website]
+     ] as [string,unknown][]).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{String(value||'Not provided')}</dd></div>)}</dl><p className="oa-caveat">These details are supplied by the account holder. No independent compliance verification is implied.</p></div>
+    <div className="oa-modal-actions"><button className="oa-outline" onClick={()=>setSelectedUser(null)}>Close</button></div>
+   </section></div>}
+  {editor&&<div className="oa-modal-backdrop">
     <section className="oa-modal" role="dialog" aria-modal="true" aria-labelledby="oa-editor-title"><div className="oa-modal-head"><div><span className="oa-kicker">{candidateEdit?'REVIEW EXTRACTED OPPORTUNITY':editor.id?'EDIT FUNDING RECORD':'MANUAL FUNDING ENTRY'}</span><h2 id="oa-editor-title">{candidateEdit?'Review and import':'Funding opportunity details'}</h2><p>Unknown values can stay blank. Publication requires admin verification against the official source.</p></div><button aria-label="Close editor" onClick={()=>{setEditor(null);setCandidateEdit(null);}}><X size={21}/></button></div>
     <form onSubmit={e=>void submitEditor(e)}><div className="oa-modal-scroll">
-      <div className="oa-form-grid"><label className="full">Opportunity title *<input required maxLength={280} value={editor.title} onChange={e=>setEditor({...editor,title:e.target.value})}/></label>
+      <div className="oa-form-grid"><label className="full">Opportunity title *<input autoFocus required maxLength={280} value={editor.title} onChange={e=>setEditor({...editor,title:e.target.value})}/></label>
         <label>Funder name *<input required maxLength={180} value={editor.funder} onChange={e=>setEditor({...editor,funder:e.target.value})}/></label>
         <label>Funding sector<select value={editor.sector} onChange={e=>setEditor({...editor,sector:e.target.value})}>{sectors.map(s=><option key={s}>{s}</option>)}</select></label>
         <label className="full">Description<textarea rows={4} value={editor.description} onChange={e=>setEditor({...editor,description:e.target.value})}/></label>

@@ -38,7 +38,12 @@ function docs(value) {
   return {title:shorten(file?.title||'Supporting document',160),sourceUrl:url,storageKey:shorten(file?.storageKey,240),status:file?.status==='stored'?'stored':'external',size:Number.isInteger(file?.size)?file.size:0};
  }).filter(Boolean);
 }
-const isDate=value=>!value||/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value+'T12:00:00Z'));
+const isDate=value=>{
+ if(!value)return true;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+ const date=new Date(value+'T12:00:00Z');
+ return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===value;
+};
 export function normalizeOpportunity(raw={},existing={}) {
  const title=shorten(raw.title,280),funder=shorten(raw.funder,180)||'Not specified';
  if(!title)throw Object.assign(new Error('Opportunity title is required.'),{status:400});

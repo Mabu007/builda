@@ -1,9 +1,25 @@
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHash} from 'node:crypto';
 import {requireAdmin,errorResponse,firestore} from './_lib/firestore-rest.js';
 import {normalizeOpportunity,identityKey,canonicalKey,isExpired,publicUrl} from './_lib/opportunities.js';
 import {searchFunding,extractFunding,storeFundingPdfs} from './_lib/discovery.js';
 import {listFirebaseUsers,serviceConfigured} from './_lib/service-auth.js';
 const now=()=>new Date().toISOString();
+const requestCounts=new Map();
+function throttle(uid,action){
+ const instant=Date.now(),key=uid+':'+(action==='start'||action==='tick'||action==='reverify'?'discovery':'standard');
+ const history=(requestCounts.get(key)||[]).filter(t=>instant-t<60000);
+ if(history.length> (key.endsWith('discovery')?24:100))throw Object.assign(new Error('Admin request rate limit reached. Retry shortly.'),{status:429});
+ history.push(instant);requestCounts.set(key,history);
+ if(requestCounts.size>500)requestCounts.clear();
+}
+async function upsertFunder(token,record){
+ const id=createHash('sha256').update(record.funder.trim().toLowerCase().replace(/[^a-z0-9]+/g,' ')).digest('hex').slice(0,40);
+ const path='funders/'+id,prior=await firestore.get(token,path);
+ await firestore.set(token,path,{name:record.funder,slug:id,published:record.published||prior?.published||false,
+  sectors:[...new Set([...(prior?.sectors||[]),record.sector].filter(Boolean))].slice(0,30),
+  updatedAt:now(),createdAt:prior?.createdAt||now()});
+}
+
 const bounded=(v,max=150)=>String(v||'').slice(0,max);
 const jobPath=id=>'discoveryJobs/'+id;
 const opportunityPath=id=>'opportunities/'+id;
@@ -23,6 +39,7 @@ export async function insertOpportunity(token,input,{actor='admin'}={}) {
  const ids=[{path:opportunityPath(id),fields:record},{path:'opportunityKeys/i_'+id,fields:{opportunityId:id,kind:'identity',createdAt:record.createdAt}}];
  if(canonical)ids.push({path:'opportunityKeys/u_'+canonical,fields:{opportunityId:id,kind:'url',createdAt:record.createdAt}});
  await firestore.atomicCreate(token,ids);
+ try{await upsertFunder(token,record);}catch{/* Funding record remains canonical even if funder enrichment needs retry. */}
  return record;
 }
 async function saveOpportunity(token,input,actor){
@@ -32,6 +49,7 @@ async function saveOpportunity(token,input,actor){
  if(valid.status==='published'&&valid.verificationStatus!=='verified')throw Object.assign(new Error('Set verification to Verified after reviewing the official source before publishing.'),{status:400});
  const update={...valid,updatedAt:now(),updatedBy:actor};
  await firestore.update(token,opportunityPath(id),update);
+ try{await upsertFunder(token,{...existing,...update});}catch{/* Funder enrichment is non-critical. */}
  return {...existing,...update};
 }
 async function removeOpportunity(token,id) {
@@ -134,6 +152,7 @@ export default async function handler(req,res) {
  res.setHeader('Cache-Control','private, no-store');
  try{
   const admin=await requireAdmin(req),token=admin.token,action=String(req.query.action||'overview');
+  throttle(admin.uid,action);
   if(Buffer.byteLength(JSON.stringify(req.body||{}),'utf8')>140000)throw Object.assign(new Error('Request is too large.'),{status:400});
   const body=typeof req.body==='string'?JSON.parse(req.body):req.body||{};
   if(req.method==='GET'){

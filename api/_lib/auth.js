@@ -42,7 +42,7 @@ export async function verifyUser(req) {
   verifier.update(parts[0] + '.' + parts[1]);
   verifier.end();
   if (!verifier.verify(cert, Buffer.from(parts[2], 'base64url'))) throw Object.assign(new Error('Invalid session signature.'), { status: 401 });
-  return { uid: payload.sub, email: payload.email || '' };
+  return { uid: payload.sub, email: payload.email || '', admin: payload.admin === true, emailVerified: payload.email_verified === true };
 }
 export function respondError(res, error) {
   const status = Number(error?.status) || 500;

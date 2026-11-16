@@ -7,18 +7,18 @@ OPPOTRON is an NPO-focused SaaS workspace for secure organisational records, rev
 ## Funding administration release
 
 ### User workspace
-- **Home**: a live personalised funding briefing using the nonprofit's saved mission, sector, programmes and geographic reach.
-- **Funding opportunities**: only published, non-expired, profile-aligned records appear in the dashboard. Results explain their relevance, show verified/unverified criteria, link to official applications, highlight file-name gaps, and allow private saving.
+- **Home**: displays published funding calls immediately, including for new accounts with an empty profile; after 30% of ten profile fields are completed, the same feed is ranked by relevance.
+- **Funding opportunities**: every published record is visible without an onboarding gate. Closed deadlines appear after open calls. After 3 of 10 profile fields are provided, results receive profile-relevance ranking without suppressing unmatched calls. Records show source-review status, official application links, and private saving/application tracking.
 - **Documents**: existing secure Cloudflare R2 vault remains unchanged.
-- **Document Creator**: working AI-assisted proposal drafting from the declared organisation profile; editable text; drafts stored in user-private Firestore; export to Word-compatible `.doc` HTML or browser print/PDF. **Tiptap rich text and native DOCX/PDF generation are still planned.** The assistant sees document metadata, not contents.
+- **Document Creator**: working AI-assisted proposal drafting from the declared organisation profile; editable text; drafts stored in user-private Firestore; export to Word-compatible `.doc` HTML or browser print/PDF. **Tiptap rich text and native DOCX/PDF generation are still planned.** Document drafting uses organisation profile and document metadata, not the uploaded file contents.
 - **Applications**: private application-status tracking, notes, and funding requirement checklists. OPPOTRON does **not** submit applications, sign declarations or collect actual funding awards automatically.
-- **Organisation & assistant**: existing NPO profile and private conversational admin assistant.
+- **Organisation**: optional NPO profile drives funding relevance from 30% completion onward. The general-purpose Q&A chatbot, floating Ask OPPOTRON launcher, chat navigation and `/api/assistant` endpoint have been retired; previously stored chat records are not deleted.
 
 ### Admin Dashboard
-Visit `/admin` when signed in using an account with a **Firebase Authentication custom claim `admin: true`**. The backend cryptographically verifies the claim and Firestore rules check it again. Regular users are denied and the API keys are never passed to clients.
+From the regular `/login` page, use the small **Admin access** link to open `/admin/login`; or visit `/admin` when signed in using an account with a **Firebase Authentication custom claim `admin: true`**. The backend cryptographically verifies the claim and Firestore rules check it again. Regular users are denied and the API keys are never passed to clients.
 
 - **Overview**: organisation count, opportunity count, published/active counts, review queue, activity. Large dataset counts are marked partial after the current cap.
-- **Users**: Firestore organisation profiles. Full Firebase Authentication users (including accounts without profiles), actual signup/last-login timestamps and claims require a **Firebase service account**. Subscription status is shown only when stored.
+- **Users**: Firestore organisation profiles. Full Firebase Authentication users (including accounts without profiles), actual signup/last-login timestamps and claims require a **Firebase service account**. The dashboard provides user search and account/profile detail inspection. It does not claim a subscription state without a provider.
 - **Opportunities**: admin-only manual creation/editing, verification, publication, unpublication, archiving, deletion, deduplication, and bounded PDF downloads into Cloudflare R2.
 - **Discovery**: Firecrawl v2 search first, Tavily fallback for search, Firecrawl v2 JSON extraction for source URLs. Discovery jobs, candidates, errors, source URLs, progress, and explicit import/review actions persist in Firestore. **Imported records start in draft/unverified state.**
 - **Provider test**: the “Test Firecrawl & Tavily” action makes **real, small authenticated server-side calls** (these consume provider quota). The status is visible only to a verified admin.
@@ -89,7 +89,7 @@ The Admin Discovery interface processes individual pages on demand and displays 
 4. Use **Discovery → Test Firecrawl & Tavily** and inspect each real provider response.
 5. Run a 5-result search and then a direct source URL extraction. Verify that candidates are saved but not published automatically.
 6. Review an extracted funding call and import it as draft. Confirm duplicates are rejected when reimporting.
-7. Mark a validated official source as Verified, then publish it. Check that an NPO whose profile fits can see it on Home and Opportunities, save it, open the original application URL and prepare a document.
+7. Mark a validated official source as Verified, then publish it. Check that a newly registered NPO with an **empty profile** can see it on Home and Opportunities; complete 3 of 10 profile fields, confirm ranking changes without hiding other calls, then save, open the official application URL and prepare a document.
 8. Try signing in as another account and confirm saved opportunities, applications and drafts do not cross accounts.
 
 ## Security and important limits

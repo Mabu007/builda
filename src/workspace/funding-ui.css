@@ -102,3 +102,24 @@
 @media(max-width:1100px){.fu-creator-layout{grid-template-columns:195px minmax(0,1fr)}.fu-application-layout{grid-template-columns:245px minmax(0,1fr)}}
 @media(max-width:790px){.fu-opportunity-grid{grid-template-columns:1fr}.fu-creator-layout,.fu-application-layout{grid-template-columns:1fr}.fu-draft-list{min-height:0;max-height:280px;overflow-y:auto}.fu-application-list{display:flex;overflow-x:auto}.fu-application-list-item{min-width:210px}.fu-opportunities-summary{flex-wrap:wrap}}
 @media(max-width:560px){.fu-toolbar{flex-wrap:wrap}.fu-search{flex-basis:100%}.fu-toolbar select{flex:1}.fu-opportunity-card{padding:18px}.fu-modal-backdrop{padding:0;align-items:end}.fu-modal{max-height:95dvh;border-radius:20px 20px 0 0}.fu-modal-head,.fu-modal-body{padding:20px}.fu-modal-actions{padding:13px calc(14px + env(safe-area-inset-left)) calc(17px + env(safe-area-inset-bottom));justify-content:stretch}.fu-modal-actions>button,.fu-modal-actions>a{flex:1}.fu-application-edit{padding:18px}.fu-application-detail-header{padding:20px}.fu-paper{margin:10px;padding:18px;min-height:420px}.fu-paper-body{min-height:370px}.fu-ai-request{padding:16px}.fu-editor-toolbar{padding:12px}}
+
+
+.fu-briefing{margin-top:24px;overflow:hidden}
+.fu-briefing .bo-panel-title{padding-bottom:18px}
+.fu-briefing-icon{width:42px;height:42px;display:grid;place-items:center;background:#e5f1e7;color:#63936e;border-radius:12px}
+.fu-briefing-items{padding:0 23px}
+.fu-briefing-items>button{display:flex;gap:17px;align-items:center;width:100%;padding:16px 0;border-top:1px solid #edf2ed;background:transparent;text-align:left;color:#76987d}
+.fu-briefing-items>button>span:nth-child(2){flex:1;min-width:0}
+.fu-briefing-items strong{font-size:12px;display:block;color:#476950;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.fu-briefing-items small{font-size:10px;color:#98a89a;display:block;margin-top:6px}
+.fu-briefing-badge{font-size:10px;display:flex;gap:5px;align-items:center;color:#4d885e;background:#e7f3e8;padding:7px 9px;border-radius:8px;font-weight:800}
+.fu-briefing-empty{text-align:center;padding:27px 22px;color:#8ca48e}
+.fu-briefing-empty>span{display:grid;place-items:center;width:43px;height:43px;background:#e7f2e9;color:#689678;border-radius:11px;margin:0 auto 15px}
+.fu-briefing-empty>strong{display:block;color:#53765b;font-size:12px;margin-bottom:8px}
+.fu-briefing-empty>p{font-size:11px;line-height:1.7;max-width:500px;margin:auto}
+.fu-briefing-footer{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:17px;background:#f5f9f4;border-top:1px solid #e5eee6;color:#4c7b5a;font-weight:800;font-size:11px}
+.fu-briefing-footer:hover{background:#edf5ed}
+.bo-theme-dark .fu-briefing-items>button{border-color:#35504a}
+.bo-theme-dark .fu-briefing-items strong,.bo-theme-dark .fu-briefing-empty strong{color:#c6e1ce}
+.bo-theme-dark .fu-briefing-footer,.bo-theme-dark .fu-briefing-empty>span,.bo-theme-dark .fu-briefing-badge{background:#284238;color:#c4dfc8;border-color:#3c584a}
+@media(max-width:540px){.fu-briefing-items{padding:0 14px}.fu-briefing-items>button{gap:8px}.fu-briefing-badge{font-size:9px;padding:6px}.fu-briefing-items strong{max-width:210px}}

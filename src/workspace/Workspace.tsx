@@ -12,6 +12,10 @@ import { auth, db } from '../firebase';
 import DocumentVault from './DocumentVault';
 import type { VaultFile } from './DocumentVault';
 import AssistantHub from './AssistantHub';
+import FundingOpportunities from './FundingOpportunities';
+import FundingApplications from './FundingApplications';
+import FundingCreator from './FundingCreator';
+import type { FundingOpportunity } from './funding';
 import './workspace.css';
 
 type View = 'overview' | 'opportunities' | 'documents' | 'creator' | 'applications' | 'company' | 'assistant' | 'settings';
@@ -87,6 +91,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
   const [vaultError, setVaultError] = useState('');
   const [files, setFiles] = useState<VaultFile[]>([]);
   const [notice, setNotice] = useState('');
+  const [draftOpportunity, setDraftOpportunity] = useState<FundingOpportunity | null>(null);
   const [model, setModel] = useState('openrouter/free');
   const [models, setModels] = useState<Model[]>([{ id: 'openrouter/free', name: 'Free auto · OpenRouter' }]);
   const [modelSaving, setModelSaving] = useState(false);
@@ -245,19 +250,10 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
             <button onClick={() => changeView('applications')}><ClipboardCheck size={19}/><strong>Applications</strong><span>Prepare and track packages</span><ArrowRight size={15}/></button>
           </div></div>
         </>}
-        {view === 'opportunities' && <>
-          <Heading eyebrow="FUNDING DISCOVERY" title="Funding opportunities" subtitle="Grants, CSI programmes, foundations and funding partners — relevant to your NPO."/>
-          <PlannedFeature icon={<HeartHandshake size={31}/>} kicker="FUNDING SOURCE INTEGRATIONS — COMING NEXT" title="Your funding feed is taking shape." body="We’ve removed the unrelated public tender feed. Verified grants, corporate CSI programmes and foundation opportunities will appear here once the funding-source framework is connected. We won’t show invented matches or deadlines." steps={['A personalised funding feed based on your organisation’s mission and programmes','Verified source links, criteria and application deadlines','Clear AI explanations of each opportunity and its requirements']} action={<><button className="bo-primary" onClick={() => changeView('company')}>Complete NPO profile <ArrowRight size={16}/></button><button className="bo-outline" onClick={() => changeView('assistant')}>Decode a funding call with AI <Sparkles size={16}/></button></>}/>
-        </>}
+        {view === 'opportunities' && <FundingOpportunities user={user} profile={profile} files={files} onPrepare={op => { setDraftOpportunity(op); changeView('creator'); }} onApplications={() => changeView('applications')}/>}
         {view === 'documents' && <DocumentVault user={user} files={files} loading={vaultLoading} error={vaultError} onNotice={setNotice}/>}
-        {view === 'creator' && <>
-          <Heading eyebrow="AI DOCUMENT WORKSPACE" title="Document Creator" subtitle="Prepare professional funding documents using your organisation’s information."/>
-          <PlannedFeature icon={<FilePenLine size={31}/>} kicker="TIPTAP EDITOR — UPCOMING" title="Your fundraising writing desk." body="The dedicated rich-text editor, document library and PDF/Word export will be added here. OPPOTRON can already help create a proposal outline or first draft in the AI assistant, using the information you’ve provided without inventing budgets or outcomes." steps={['AI-assisted funding proposals and letters of support','Editable, formatted documents powered by Tiptap','Save drafts and export approved documents as PDF or Word']} action={<button className="bo-primary" onClick={() => changeView('assistant')}>Draft with OPPOTRON now <ArrowRight size={16}/></button>}/>
-        </>}
-        {view === 'applications' && <>
-          <Heading eyebrow="FUNDING APPLICATION WORKFLOW" title="Applications" subtitle="Prepare, review and eventually track funding applications in one place."/>
-          <PlannedFeature icon={<ClipboardCheck size={31}/>} kicker="APPLICATION TRACKING — UPCOMING" title="Every application, organised." body="The applications workspace is being built around human-approved submissions. Tracking and automatic form submission are not active yet. For now your assistant can help you create an application checklist from a funding call you provide." steps={['Requirement checklists based on original funder instructions','Reusable documents and approval checkpoints','Deadlines, statuses and outcomes once tracking is available']} action={<button className="bo-primary" onClick={() => changeView('assistant')}>Ask for an application checklist <ArrowRight size={16}/></button>}/>
-        </>}
+        {view === 'creator' && <FundingCreator user={user} profile={profile} files={files} model={model} opportunity={draftOpportunity}/>}
+        {view === 'applications' && <FundingApplications user={user} onOpportunities={() => changeView('opportunities')} onPrepare={op => { setDraftOpportunity(op); changeView('creator'); }}/>}
         {view === 'assistant' && <AssistantHub user={user} organisation={{...profile, organizationType: 'npo'}} documents={files} model={model} onViewProfile={() => changeView('company')}/>}
         {view === 'company' && <>
           <Heading eyebrow="YOUR ORGANISATION KNOWLEDGE BASE" title="Organisation profile" subtitle="Tell OPPOTRON about your NPO once. This information will support document preparation, funding matches and application readiness." action={<span className="bo-private"><LockKeyhole size={14}/> Private NPO profile</span>}/>

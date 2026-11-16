@@ -70,6 +70,7 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
  const [prompt,setPrompt]=useState('Find open CSI, grant and foundation funding opportunities for South African nonprofit organisations.');
  const [limit,setLimit]=useState(20),[url,setUrl]=useState(''),[discoverMode,setDiscoverMode]=useState<'search'|'url'>('search');
  const [jobActive,setJobActive]=useState(''),[jobBusy,setJobBusy]=useState(false);
+ const [probeBusy,setProbeBusy]=useState(false),[providerResults,setProviderResults]=useState<{firecrawl?:{ok:boolean;message:string};tavily?:{ok:boolean;message:string}}|null>(null);
  const jobLock=useRef(false),loaded=useRef(false);
  const check=async()=>{
   try{const res=await adminApi<{admin:boolean}>(user,'session');setAccess(res.admin?'allowed':'denied');}
@@ -115,6 +116,12 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
  const status=async(op:FundingOpportunity,value:'published'|'draft'|'archived')=>{
   if(value==='published'&&op.verificationStatus!=='verified'){setEditor(initialEditor(op));setError('Review and verify the official source before publishing.');return;}
   await action('update',{id:op.id,status:value});
+ };
+ const probe=async()=>{
+  setProbeBusy(true);setProviderResults(null);setError('');
+  try{setProviderResults(await adminApi(user,'probe-providers'));}
+  catch(error){setError(error instanceof Error?error.message:'Provider check could not be completed.');}
+  finally{setProbeBusy(false);}
  };
  const begin=async()=>{
   if(busy||jobBusy)return;
@@ -182,6 +189,10 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
     </section>}
     {section==='discovery'&&<div className="oa-discovery">
       <section className="oa-panel oa-discovery-form"><div className="oa-panel-heading"><div><div className="oa-kicker">SOURCE DISCOVERY</div><h3>Find funding calls</h3><p>Search the web or extract one official funding page. Every result enters review before publication.</p></div></div>
+        <div className="oa-providers"><div><strong>Live provider connections</strong><small>Admin-only API test · uses a small real search request to each provider</small></div>
+        <button className="oa-outline" onClick={()=>void probe()} disabled={probeBusy}><RefreshCw size={15}/>{probeBusy?'Testing…':'Test Firecrawl & Tavily'}</button></div>
+        {providerResults&&<div className="oa-provider-results">{(['firecrawl','tavily'] as const).map(name=><div key={name} className={providerResults[name]?.ok?'ok':'failed'}><span>{name==='firecrawl'?'Firecrawl':'Tavily'}</span><strong>{providerResults[name]?.ok?'Connected':'Connection failed'}</strong><small>{providerResults[name]?.message||'No result'}</small></div>)}</div>}
+
         <div className="oa-segments"><button className={discoverMode==='search'?'active':''} onClick={()=>setDiscoverMode('search')}><Search size={16}/> Search funding</button><button className={discoverMode==='url'?'active':''} onClick={()=>setDiscoverMode('url')}><Link2 size={16}/> Extract URL</button></div>
         {discoverMode==='search'?<><label>Describe what to discover<textarea rows={3} value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder="Find 50 CSI funding opportunities for education nonprofits in South Africa."/></label><label>Target results<select value={limit} onChange={e=>setLimit(Number(e.target.value))}>{[5,10,20,30,50].map(x=><option key={x} value={x}>{x} candidates</option>)}</select></label></>:
          <label>Funding opportunity website<input type="url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://funder.org.za/apply"/></label>}

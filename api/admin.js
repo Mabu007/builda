@@ -1,14 +1,14 @@
 import {randomUUID,createHash} from 'node:crypto';
 import {requireAdmin,errorResponse,firestore} from './_lib/firestore-rest.js';
 import {normalizeOpportunity,identityKey,canonicalKey,isExpired,publicUrl} from './_lib/opportunities.js';
-import {searchFunding,extractFunding,storeFundingPdfs} from './_lib/discovery.js';
+import {searchFunding,extractFunding,storeFundingPdfs,probeDiscoveryProviders} from './_lib/discovery.js';
 import {listFirebaseUsers,serviceConfigured} from './_lib/service-auth.js';
 const now=()=>new Date().toISOString();
 const requestCounts=new Map();
 function throttle(uid,action){
  const instant=Date.now(),key=uid+':'+(action==='start'||action==='tick'||action==='reverify'?'discovery':'standard');
  const history=(requestCounts.get(key)||[]).filter(t=>instant-t<60000);
- if(history.length> (key.endsWith('discovery')?24:100))throw Object.assign(new Error('Admin request rate limit reached. Retry shortly.'),{status:429});
+ if(history.length> (key.endsWith('discovery')?50:100))throw Object.assign(new Error('Admin request rate limit reached. Retry shortly.'),{status:429});
  history.push(instant);requestCounts.set(key,history);
  if(requestCounts.size>500)requestCounts.clear();
 }
@@ -59,7 +59,7 @@ async function saveOpportunity(token,input,actor){
    identityAliases:[...new Set([...oldAliases,newIdentity])].slice(0,80),
    canonicalAliases:[...new Set([...urlAliases,...(newCanonical?[newCanonical]:[])])].slice(0,80),
    updatedAt:now(),updatedBy:actor};
- await firestore.atomicUpdate(token,opportunityPath(id),{...existing,...update},newKeys);
+ await firestore.atomicUpdate(token,opportunityPath(id),Object.fromEntries(Object.entries({...existing,...update}).filter(([key])=>!key.startsWith('_'))),newKeys);
  try{await upsertFunder(token,{...existing,...update});}catch{/* Funder enrichment is non-critical. */}
  return {...existing,...update};
 }
@@ -168,6 +168,7 @@ export default async function handler(req,res) {
   const body=typeof req.body==='string'?JSON.parse(req.body):req.body||{};
   if(req.method==='GET'){
    if(action==='session')return res.status(200).json({admin:true,uid:admin.uid,serviceAccountConfigured:serviceConfigured(),providers:{firecrawl:!!process.env.FIRECRAWL_API_KEY,tavily:!!process.env.TAVILY_API_KEY}});
+   if(action==='probe-providers')return res.status(200).json(await probeDiscoveryProviders());
    if(action==='overview')return res.status(200).json(await counts(token));
    if(action==='users'){
     const profiles=await all(token,'contractors',1000);

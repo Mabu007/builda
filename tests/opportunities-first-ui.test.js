@@ -1,8 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
+import ts from 'typescript';
 
 const source = name => readFileSync(new URL('../' + name, import.meta.url), 'utf8');
+const fundingModule=ts.transpileModule(source('src/workspace/funding.ts'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {profileProgress,matchOpportunity}=await import('data:text/javascript;base64,'+Buffer.from(fundingModule).toString('base64'));
+
+test('profile relevance becomes available at exactly 30%, not before',()=>{
+ const bare={name:'Example NPO',category:'Education and skills'};
+ assert.deepEqual(profileProgress({}),{count:0,percent:0,personalised:false});
+ assert.deepEqual(profileProgress(bare),{count:2,percent:20,personalised:false});
+ assert.deepEqual(profileProgress({...bare,province:'Gauteng'}),{count:3,percent:30,personalised:true});
+ const call={id:'sample',title:'Education grant',sector:'Education and skills',funder:'Example Foundation',coverage:'South Africa',requirements:[],status:'published',verificationStatus:'verified'};
+ assert.equal(matchOpportunity(call,bare).score,0);
+ assert.ok(matchOpportunity(call,{...bare,province:'Gauteng'}).score>0);
+});
+
 
 test('funding profile threshold is 3 of 10 fields (30%)', () => {
   const funding = source('src/workspace/funding.ts');

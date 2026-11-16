@@ -1,69 +1,47 @@
-# OPPOTRON — Opportunity Intelligence, Powered by AI
+# OPPOTRON — The AI Fundraising Workspace for Nonprofits
 
-**Your business. The right opportunities. Automatically.**
+**Your funding. Your documents. Your future.**
 
-OPPOTRON is the evolution of BUILDA into a multi-sector SaaS opportunity-intelligence workspace for **private companies and NPOs**. Its long-term ambition is an intelligent opportunity administration department: profile, documents, source discovery, matching, preparation, application tracking and human-approved automation.
+OPPOTRON helps small and community nonprofit organisations organise their administration, documents and fundraising preparation without a full-time back-office team.
 
-The actual shipped MVP must be described accurately. Some capabilities are currently implemented; others are explicitly planned.
+## Current release
 
-## Implemented now
+- **Premium NPO-first landing page** introducing the four product pillars, clearly distinguishing available features from the roadmap.
+- **NPO-only registration experience**. Firebase Auth provides private accounts; there is no longer a Company/NPO selection popup.
+- **Organisation profile** for name, NPO/NPC/PBO registration references (where applicable), mission, focus, programmes, beneficiaries, community coverage, independently supplied achievements, fundraising priorities and contact information.
+- **Private document vault** with Cloudflare R2 files and Firestore metadata; batch uploads with required name, optional description, category, and expiry. Document categories now include NPO registration, constitution, governance, financial statements, annual reports, programmes/impact and funding proposals.
+- **OPPOTRON AI fundraising assistant** using OpenRouter with its existing private conversation list, saved Firestore chat history, organisation context, document **metadata**, practical proposal outlines and application checklists. The assistant occupies the main dashboard content area, without the former floating-card framing.
+- **Home dashboard** with actual document counts, recorded expirations and **profile completeness** (not a verified compliance score). No fictitious opportunity metrics or public procurement feed.
+- **Navigation:** Home, Opportunities, Documents, Document Creator, Applications, Organisation, OPPOTRON Assistant, Settings.
+- **Light/dark themes**, responsive mobile and desktop layouts retained.
 
-- **React + Vite workspace** and premium public SaaS landing website branded as OPPOTRON.
-- **Firebase Authentication** (email/password), plus a first-sign-in organisation selector: **Private Company** or **NPO**. The selection is saved to a private Firestore profile and updates the profile terminology. Organisation profiles include sector, services/mission, operating areas, programmes/projects, contact information and goals.
-- **Public procurement data** from National Treasury's OCDS release feed, fetched by an authenticated server API (`/api/tenders`), paginated and shown as recent releases. The feed is NOT an exhaustive government tender database. Company-aware keyword/category, geography and CIDB relevance ranking uses the fields supplied; never treats a match as verified eligibility.
-- **Document vault** on R2 with per-user signed URLs and Firestore metadata. Multiple files per upload batch, required display names, optional descriptions/categories/expiry dates, and document metadata details modal. **No OCR/text extraction is implemented yet.** Files are private.
-- **OPPOTRON AI admin assistant**, a full conversation workspace with new chats, private Firestore chat/message history, delete, suggested prompts, message composer, and a floating chat button. Users can ask questions about procurement notices, grant/CSI calls they provide, application checklists, missing details and general administration. A tender's details can be passed directly into a new assistant conversation.
-- **OpenRouter AI** through server-only credentials; the free automatic model (`openrouter/free`) is the default, low-cost model selection is available in Settings, and approved selected models can fall back to a free model if the paid model fails. API errors distinguish missing/invalid keys, insufficient credits, rate limits, timeouts and provider outages. These safeguards cannot guarantee service while upstream is unavailable.
-- Responsive desktop/mobile dashboard with light/dark themes.
+## Planned features — not available yet
 
-## Planned — NOT yet implemented
+1. **Document understanding:** OCR / extraction and verification of uploaded files; detailed compliance readiness against funder-specific criteria.
+2. **Funding discovery:** verified scheduled ingestion of grants, CSI programmes, foundation announcements and prospective funding partners, with eligibility-first NPO matching.
+3. **Document Creator:** a Tiptap-based rich text editor, AI-assisted draft workflows, private saved templates and DOCX/PDF export.
+4. **Applications:** per-funder requirement checklists, user-approved submission workflows, deadlines, statuses and outcome tracking.
 
-- Continuous, verified CSI/grant and private-procurement source aggregation.
-- OCR, document text extraction, automatic compliance/eligibility validation.
-- Full application drafting across uploaded documents, portal submissions, application-status tracking, monitoring, automated follow-ups, browser automation or award predictions.
-- Subscription billing and optional managed services.
+The previous eTenders feed has been removed from the **visible application and active client requests**. The historical backend API and saved legacy data are not automatically deleted; this is not yet a grant ingestion system. Opportunity pages clearly state that the source integrations are being built.
 
-The NPO mode currently adapts the profile and assistant, but the live listing is still the **public OCDS procurement feed**. The app tells users that CSI/grant ingestion is coming; never show fictitious grant matches.
+### Privacy and accuracy
 
-## Setup
+- The **organisation profile is the declared source of truth** for AI context. It is not yet automatically enriched from file contents, because OCR and document verification are still pending.
+- AI receives organisation profile fields and document metadata, **not the contents** of uploaded R2 documents. Never describe file metadata as verified evidence.
+- The AI must not invent funder opportunities, closing dates, registration status, requested amounts, organisational budgets, results, beneficiary counts or past achievements. Application submissions always require human approval.
+- Owner-scoped security rules isolate each user's company/NPO record, messages, saved historic notices and documents.
 
-### Firebase
+## Deployment
 
-1. Set up Firebase Authentication (**Email/Password**) and a Firestore database on the same project.
-2. Set `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID` in Vercel.
-3. **Publish `firestore.rules` manually** under **Firebase Console → Firestore Database → Rules → Publish**, or run `npx firebase-tools deploy --only firestore:rules --project YOUR_PROJECT_ID`. Vercel does **not** deploy Firestore rules.
-4. The new rules add `organizationType` on organisation profiles, and private `contractors/{uid}/chats/{chatId}` and `messages/{messageId}` paths. The assistant cannot save chat history if these rules have not been published.
+Frontend: Vite + React + TypeScript; Firebase Auth and Firestore; Cloudflare R2 for private files; Vercel server APIs; OpenRouter AI. Repository remains `Mabu007/builda`, Vercel project remains `builda`, and the current hosted URL remains https://builda-five.vercel.app/.
 
-### OpenRouter
+**Important:** Whenever `firestore.rules` changes, publish it in Firebase Console → Firestore Database → Rules. Vercel deploys frontend/API code, not Firestore rules. The NPO profile introduces validated fields `npcNumber`, `pboNumber`, `yearEstablished`, `website`, `beneficiaries`, and `fundingPriorities`. These cannot be saved until matching rules are deployed.
 
-- Set `OPENROUTER_API_KEY` as a **server-side** Vercel environment variable for production/preview.
-- Default `openrouter/free` is a free chat-model router; a valid API key and available rate-limit quota are still necessary.
-- Check network status and the displayed AI error. HTTP 401 means invalid key; HTTP 402 means billing/credit cap; HTTP 429 rate limiting; HTTP 502/503 provider availability. Server functions report a safe diagnostic error without disclosing API keys or private prompt content in logs.
-- A request may fall back to free routing, never automatically to a more expensive model. Free models may be limited by provider quotas.
-
-### Cloudflare R2
-
-Configure `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` as **private** Vercel environment variables. Configure the R2 bucket CORS to permit `https://builda-five.vercel.app` (current production hostname), method PUT, and Content-Type. Verify a real signed upload, Firestore metadata save, download and delete before handling real compliance documents.
-
-### Local and CI validation
+### Test / build
 
 ```bash
 npm ci
 npm run build
 ```
 
-`npm run build` runs Node tests, TypeScript and Vite. A GitHub Actions workflow has been added for pull requests and feature branches.
-
-## Trust and privacy
-
-- Firestore company and NPO profiles, chats, chat messages, saved notices and file metadata are owner-scoped by the supplied rules.
-- AI requests include the organisation's declared capabilities and selected notice as context. Document metadata is shared as hints, **not document contents**. Sensitive contact details are excluded.
-- Public tender descriptions are untrusted input. OpenRouter output is explanatory, not authoritative legal, compliance or procurement advice.
-- No applications are submitted or declarations signed without authorised human review.
-- Live data coverage and availability depend on government/open-source providers; do not invent matches or guarantees.
-
-## Deployment
-
-Repository: `Mabu007/builda` (historical repository name), Vercel project: `builda` (historical project name), public URL: https://builda-five.vercel.app. Application/product brand is **OPPOTRON**. Do not change repository/project ownership or production domain implicitly during rebrand.
-
-Vercel's Hobby deployment quota may block Git push previews and fresh production deployments with HTTP 402 until the quota is available or the owner changes the plan. Do not label a release production-ready until the exact commit's build has passed and the production alias is confirmed.
+This executes Node tests, TypeScript checks and a Vite production build. A READY deployment confirms assets built successfully, **not** that Firebase rules, live OpenRouter responses or R2 upload/download were verified for a signed-in user.

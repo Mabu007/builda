@@ -155,14 +155,21 @@ async function importCandidate(token,id,overrides,uid){
 async function counts(token){
  const [people,opps,candidates,jobs]=await Promise.all([
   all(token,'contractors',1000),all(token,'opportunities',1000),all(token,'discoveryCandidates',400),all(token,'discoveryJobs',300)]);
+ let totalUsers=null,authPartial=false;
+ if(serviceConfigured()){
+  try{
+   const accounts=await listFirebaseUsers(3);
+   totalUsers=accounts.users.length;authPartial=accounts.hasMore;
+  }catch{authPartial=true;}
+ }
  return {
-  totalUsers:serviceConfigured()?null:people.items.length,organisations:people.items.length,
+  totalUsers,organisations:people.items.length,
   totalOpportunities:opps.items.length,published:opps.items.filter(o=>o.status==='published').length,
   active:opps.items.filter(o=>o.status==='published'&&!isExpired(o)).length,
   pendingReviews:candidates.items.filter(c=>c.status==='review'||c.status==='incomplete').length,
   discoveryJobs:jobs.items.length,discoveryRunning:jobs.items.filter(j=>!['done','failed'].includes(j.status)).length,
   recentlyDiscovered:candidates.items.slice(-30).length,
-  partial:people.hasMore||opps.hasMore||candidates.hasMore||jobs.hasMore
+  partial:people.hasMore||opps.hasMore||candidates.hasMore||jobs.hasMore||authPartial
  };
 }
 export default async function handler(req,res) {

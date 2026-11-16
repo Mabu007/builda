@@ -30,7 +30,7 @@ function App() {
     return () => window.removeEventListener('popstate', handlePop);
   }, []);
   const go = (next: Page) => {
-    const path = next === 'dashboard' ? '/app' : next === 'home' ? '/' : next === 'admin-login' ? '/admin/login' : '/' + next;
+    const path = next === 'dashboard' ? '/app/opportunities' : next === 'home' ? '/' : next === 'admin-login' ? '/admin/login' : '/' + next;
     if (window.location.pathname !== path) window.history.pushState({}, '', path);
     setPage(next); setMessage(''); window.scrollTo({ top: 0, behavior: 'auto' });
   };

@@ -1,53 +1,92 @@
-import React, {useEffect, useState} from 'react';
-import {createRoot} from 'react-dom/client';
-import {onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, type User} from 'firebase/auth';
-import {doc, getDoc, setDoc} from 'firebase/firestore';
-import {ArrowRight, ArrowUpRight, Building2, CheckCircle2, ChevronRight, Compass, FileText, HardHat, LayoutDashboard, LogOut, MapPin, Menu, ShieldCheck, Sparkles, X, Bell, FolderOpen, Check, Clock3, CircleCheck, Activity, LockKeyhole, Bot, BriefcaseBusiness, PanelLeft, ArrowDownRight, Settings, LifeBuoy, ChevronDown, CircleDashed, ClipboardList, FileCheck2} from 'lucide-react';
-import {auth, db} from './firebase';
-import { Button } from './components/ui/button';
-import { Card } from './components/ui/card';
-import './style.css';
+import React, { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import {
+  createUserWithEmailAndPassword, onAuthStateChanged,
+  signInWithEmailAndPassword, type User
+} from 'firebase/auth';
+import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import { auth } from './firebase';
+import Landing from './oppo/Landing';
 import Workspace from './workspace/Workspace';
 
-type Page = 'home'|'login'|'register'|'dashboard'|'company';
-const categories=['General Building','Civil Engineering','Electrical','Plumbing','Roofing','Painting','Renovations','Roads','Paving','Landscaping','Construction Supply','Mechanical Works','Specialist Construction Services'];
-const provinces=['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Free State','Limpopo','Mpumalanga','Northern Cape','North West'];
-function App(){
- const [page,setPage]=useState<Page>(()=>window.location.pathname.startsWith('/app')?'dashboard':window.location.pathname==='/login'?'login':window.location.pathname==='/register'?'register':'home'), [menu,setMenu]=useState(false), [user,setUser]=useState<User|null>(null), [message,setMessage]=useState(''), [profile,setProfile]=useState<Record<string,string>>({}), [loading,setLoading]=useState(false), [dashTab,setDashTab]=useState<'overview'|'tenders'|'approvals'>('overview');
- useEffect(()=>{if(!auth)return;return onAuthStateChanged(auth,u=>{setProfile({});setUser(u);});},[]);
-  useEffect(() => {
-    const onBack = () => {
-      const path = window.location.pathname;
-      setPage(path.startsWith('/app') ? 'dashboard' : path === '/login' ? 'login' : path === '/register' ? 'register' : 'home');
-      setMenu(false);
-    };
-    window.addEventListener('popstate', onBack);
-    return () => window.removeEventListener('popstate', onBack);
-  }, []);
- useEffect(()=>{setMessage('');window.scrollTo(0,0);setMenu(false);},[page]);
+type Page = 'home' | 'login' | 'register' | 'dashboard';
+const pageFor = (path: string): Page => path.startsWith('/app') ? 'dashboard' : path === '/login' ? 'login' : path === '/register' ? 'register' : 'home';
 
- const go=(p:Page)=>{setPage(p);window.history.pushState(null,'',p==='dashboard'?'/app':p==='company'?'/app/company':p==='login'?'/login':p==='register'?'/register':'/');};
- const submitAuth=async(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();if(!auth){setMessage('Firebase is not configured yet.');return}const f=new FormData(e.currentTarget);setLoading(true);try{if(page==='register')await createUserWithEmailAndPassword(auth,String(f.get('email')),String(f.get('password')));else await signInWithEmailAndPassword(auth,String(f.get('email')),String(f.get('password')));go('dashboard')}catch{setMessage('Unable to sign in or create an account. Check your details and try again.')}finally{setLoading(false)}};
- const saveCompany=async(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();if(!db||!user)return;const f=new FormData(e.currentTarget);setLoading(true);try{await setDoc(doc(db,'contractors',user.uid),{ownerId:user.uid,name:String(f.get('name')),registration:String(f.get('registration')),description:String(f.get('description')),category:String(f.get('category')),province:String(f.get('province')),city:String(f.get('city')),phone:String(f.get('phone')),tradingName:String(f.get('tradingName')),contactPerson:String(f.get('contactPerson')),whatsapp:String(f.get('whatsapp')),coverage:String(f.get('coverage')),services:String(f.get('services')),cidb:String(f.get('cidb')),experience:String(f.get('experience')),projects:String(f.get('projects')),goals:String(f.get('goals')),email:user.email||''},{merge:true});setMessage('Company profile saved.')}catch{setMessage('Unable to save your profile. Please try again.')}finally{setLoading(false)}};
- const Logo=()=> <button className="logo" onClick={()=>go('home')} aria-label="BUILDA home"><span className="logo-mark">b<span>.</span></span>builda<span className="logo-dot">.</span></button>;
- const nav=<><button onClick={()=>{go('home');setTimeout(()=>document.getElementById('platform')?.scrollIntoView({behavior:'smooth'}),50)}}>The platform</button><button onClick={()=>{go('home');setTimeout(()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'}),50)}}>How it works</button><button onClick={()=>{go('home');setTimeout(()=>document.getElementById('security')?.scrollIntoView({behavior:'smooth'}),50)}}>Your control</button></>;
- const inWorkspace=page==='dashboard'||page==='company';
- const profileFields=['name','registration','phone','description','category','province','city','coverage','services','experience','projects','goals'];
- const completed=profileFields.filter(k=>Boolean(profile[k]?.trim())).length;
- const progress=Math.round(completed/profileFields.length*100);
- return <>{!inWorkspace&&<header><div className="wrap nav"><Logo/><nav className={menu?'open':''}>{nav}<div className="mobile-actions"><button onClick={()=>go(user?'dashboard':'login')}>{user?'Dashboard':'Log in'}</button><button className="button dark" onClick={()=>go('register')}>Get started <ArrowUpRight size={16}/></button></div></nav><div className="nav-actions"><button className="text-btn" onClick={()=>go(user?'dashboard':'login')}>{user?'Dashboard':'Log in'}</button><button className="button dark small" onClick={()=>go('register')}>Get started <ArrowUpRight size={15}/></button></div><button className="menu" aria-label="Toggle navigation" onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</button></div></header>}
- {page==='home'&&<main className="saas-home"><section className="saas-hero"><div className="hero-grain"/><div className="wrap saas-hero-copy"><div className="saas-pill"><span/> THE INTELLIGENT TENDER WORKSPACE</div><h1>Your business.<br/><span>Always moving forward.</span></h1><p>Meet the workspace designed to help manage your compliance, prepare tenders and keep your business ready for its next opportunity.</p><div className="saas-hero-actions"><Button size="lg" onClick={()=>go('register')}>Get started <ArrowUpRight size={17}/></Button><button className="saas-secondary" onClick={()=>document.getElementById('platform')?.scrollIntoView({behavior:'smooth'})}>Explore the platform <ArrowRight size={17}/></button></div><div className="saas-availability"><span/> BUILDA IS BEING INTRODUCED IN STAGES</div></div><div className="product-preview wrap" aria-label="Illustrative preview of the planned contractor workspace"><div className="preview-top"><div className="preview-brand"><b>b</b><strong>builda<span>.</span></strong></div><span className="preview-tag">ILLUSTRATIVE PREVIEW</span><div className="preview-top-right"><span>YOUR WORKSPACE</span><Bell size={15}/><span className="preview-avatar">B</span></div></div><div className="preview-body"><div className="preview-sidebar"><span className="sidebar-label">WORKSPACE</span><div className="preview-active"><LayoutDashboard/> Overview</div><div><Bot/> BUILDA Agent</div><div><BriefcaseBusiness/> Tender activity</div><div><FolderOpen/> Documents</div><div><CircleCheck/> Approvals</div><div><Building2/> Company profile</div><span className="sidebar-label sidebar-bottom">YOUR BUSINESS, IN ONE PLACE</span></div><div className="preview-main"><div className="preview-heading"><div><span className="preview-eyebrow">YOUR BUSINESS AT A GLANCE</span><h3>Good morning, welcome back.</h3><p>Here’s what needs your attention today.</p></div><span className="preview-live"><span/> WORKSPACE OVERVIEW</span></div><div className="preview-stats"><div><span>AGENT ACTIVITY <Activity/></span><strong>Work in progress</strong><small>Your tenders, organised</small></div><div><span>YOUR APPROVALS <CircleCheck/></span><strong>Ready for review</strong><small>Decisions stay with you</small></div><div><span>COMPLIANCE <ShieldCheck/></span><strong>Keep up to date</strong><small>Documents in one place</small></div></div><div className="preview-grid"><div className="preview-card"><div className="preview-card-head"><div><strong>Needs your attention</strong><small>Requests from your BUILDA workspace</small></div><span>VIEW ALL <ArrowRight/></span></div><div className="preview-row"><i className="preview-icon gold"><FileText/></i><div><strong>Review a tender quotation</strong><small>Approval request · Tender activity</small></div><span className="preview-badge amber">REVIEW</span></div><div className="preview-row"><i className="preview-icon olive"><ShieldCheck/></i><div><strong>Update a compliance document</strong><small>Document request · Company profile</small></div><span className="preview-badge neutral">ACTION</span></div><div className="preview-row"><i className="preview-icon cream"><Bot/></i><div><strong>Your agent activity report</strong><small>Business development · Summary</small></div><span className="preview-badge neutral">REPORT</span></div></div><div className="agent-card"><div className="agent-icon"><Sparkles size={20}/></div><span>YOUR BUILDA AGENT</span><h4>Consider the<br/>details handled.</h4><p>A clear view of the work moving behind your business.</p><div className="agent-footer">INTELLIGENCE, WITH OVERSIGHT <ArrowUpRight size={14}/></div></div></div></div></div></div><div className="preview-note">A concept preview of planned features. Agent activity, approvals and document storage are in development.</div></section><section className="saas-intro wrap" id="platform"><div className="saas-label"><span/> THE BUILDA PLATFORM</div><div className="saas-intro-grid"><h2>A better way to<br/><em>run the business.</em></h2><p>The vision is simple: give your construction company a single, intelligent place for the work behind the work. Less chasing paperwork. More visibility. You stay in control.</p></div><div className="saas-features"><article><div className="saas-feature-icon"><FolderOpen/></div><span>01 / YOUR DOCUMENTS</span><h3>Your business,<br/>beautifully organised.</h3><p>A private home for your company information and compliance documents, ready for when your team needs them.</p></article><article><div className="saas-feature-icon"><Bot/></div><span>02 / YOUR AGENT</span><h3>A little more<br/>happens for you.</h3><p>Your agent is being designed to help research, prepare and coordinate tender work using your company’s information.</p></article><article><div className="saas-feature-icon"><CircleCheck/></div><span>03 / YOUR CONTROL</span><h3>Only the decisions<br/>that need you.</h3><p>Review important requests, missing information and quotations from a clear, simple workspace.</p></article></div></section><section className="saas-process" id="how"><div className="wrap"><div className="saas-process-head"><div><div className="saas-label light-label"><span/> YOUR WORKFLOW, SIMPLIFIED</div><h2>One workspace.<br/><em>More possibility.</em></h2></div><p>Designed around the way construction businesses actually work.</p></div><div className="saas-steps"><div><span>01</span><h3>Build your company profile</h3><p>Share your capabilities, experience and the type of work you want to pursue.</p></div><div><span>02</span><h3>Bring your documents together</h3><p>Keep the information behind your business organised and accessible.</p></div><div><span>03</span><h3>Let the work move forward</h3><p>BUILDA is being designed to prepare tender work with AI and human oversight.</p></div><div><span>04</span><h3>Review what matters</h3><p>Stay informed and approve important decisions as they arise.</p></div></div></div></section><section className="saas-control wrap" id="security"><div className="control-graphic"><div className="control-orb"><ShieldCheck size={46}/></div><div className="control-caption"><LockKeyhole size={15}/> DESIGNED FOR YOUR CONTROL</div></div><div className="control-copy"><div className="saas-label"><span/> BUILT AROUND YOUR BUSINESS</div><h2>Intelligence behind<br/>the scenes. <em>Clarity<br/>in front of you.</em></h2><p>From compliance requirements to tender progress, the workspace is designed to bring the important details to you. AI can assist; people provide oversight; significant decisions remain yours.</p><div className="control-points"><div><Check size={16}/> A private company profile</div><div><Check size={16}/> Human oversight where it matters</div><div><Check size={16}/> Important decisions for your approval</div></div></div></section><section className="saas-cta"><div className="wrap"><div className="saas-label light-label"><span/> BUILT FOR CONSTRUCTION BUSINESSES</div><h2>The next chapter<br/><em>starts here.</em></h2><p>Give your business the workspace it deserves.</p><Button size="lg" onClick={()=>go('register')}>Create your company profile <ArrowUpRight size={17}/></Button></div></section></main>}
- {(page==='login'||page==='register')&&<main className="form-page"><div className="form-card"><div className="section-label"><span/> {page==='login'?'WELCOME BACK':'GET STARTED'}</div><h1>{page==='login'?'Good to see you again.':'Your business, elevated.'}</h1><p>{page==='login'?'Log in to your BUILDA workspace.':'Create your private workspace and start building your company profile.'}</p><form onSubmit={submitAuth}><label>Email address<input required name="email" type="email" placeholder="you@company.co.za"/></label><label>Password<input required name="password" type="password" minLength={6} placeholder="At least 6 characters"/></label><button className="button dark full" disabled={loading}>{loading?'Please wait…':page==='login'?'Log in':'Create account'} <ArrowRight size={17}/></button></form><p className="form-switch">{page==='login'?"New to BUILDA? ":'Already have an account? '}<button onClick={()=>go(page==='login'?'register':'login')}>{page==='login'?'Create an account':'Log in'}</button></p>{message&&<div className="notice" role="status">{message}</div>}</div></main>}
- {inWorkspace&&(user?<Workspace user={user} onExit={()=>go('home')}/>:<main className="app-shell"><div className="app-auth-empty"><h2>Welcome to BUILDA</h2><p>Log in to access your company workspace.</p><Button onClick={()=>go('login')}>Log in <ArrowRight size={16}/></Button></div></main>)}
- {!inWorkspace&&<footer><div className="wrap footer-main"><div><Logo/><p>Your business.<br/>Built for what’s next.</p></div><div><span>EXPLORE</span><button onClick={()=>{go('home');setTimeout(()=>document.getElementById('platform')?.scrollIntoView({behavior:'smooth'}),50)}}>The platform</button><button onClick={()=>{go('home');setTimeout(()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'}),50)}}>How it works</button><button onClick={()=>go('register')}>For your business</button></div><div><span>ACCOUNT</span><button onClick={()=>go('login')}>Log in</button><button onClick={()=>go('register')}>Create an account</button></div><div className="footer-last"><span>MADE FOR BUILDERS</span><p>Built for the businesses<br/>building South Africa.</p></div></div><div className="wrap footer-bottom"><span>© {new Date().getFullYear()} BUILDA. All rights reserved.</span><span>Built on possibility. <CheckCircle2 size={14}/></span></div></footer>}</>;
+function App() {
+  const [page, setPage] = useState<Page>(() => pageFor(window.location.pathname));
+  const [user, setUser] = useState<User | null>(null);
+  const [ready, setReady] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  useEffect(() => {
+    if (!auth) { setReady(true); return; }
+    return onAuthStateChanged(auth, u => { setUser(u); setReady(true); },
+      () => { setReady(true); setMessage('Authentication is unavailable. Try again later.'); });
+  }, []);
+  useEffect(() => {
+    const handlePop = () => { setPage(pageFor(window.location.pathname)); setMessage(''); };
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
+  const go = (next: Page) => {
+    const path = next === 'dashboard' ? '/app' : next === 'home' ? '/' : '/' + next;
+    if (window.location.pathname !== path) window.history.pushState({}, '', path);
+    setPage(next); setMessage(''); window.scrollTo({ top: 0, behavior: 'auto' });
+  };
+  const submitAuth = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!auth) { setMessage('Firebase Authentication has not been configured.'); return; }
+    const values = new FormData(event.currentTarget);
+    const email = String(values.get('email') || '').trim();
+    const password = String(values.get('password') || '');
+    if (!email || password.length < 6) { setMessage('Enter a valid email and a password of at least 6 characters.'); return; }
+    setLoading(true); setMessage('');
+    try {
+      if (page === 'register') await createUserWithEmailAndPassword(auth, email, password);
+      else await signInWithEmailAndPassword(auth, email, password);
+      go('dashboard');
+    } catch (error) {
+      const code = String((error as { code?: string })?.code || '');
+      setMessage(code === 'auth/email-already-in-use' ? 'That email is already registered. Log in instead.' :
+        code === 'auth/weak-password' ? 'Choose a stronger password (at least 6 characters).' :
+        code === 'auth/invalid-email' ? 'Enter a valid email address.' :
+        code === 'auth/too-many-requests' ? 'Too many attempts. Please try again later.' :
+        'We could not sign you in. Check your details and retry.');
+    } finally { setLoading(false); }
+  };
+
+  if (page === 'home') return <Landing loggedIn={Boolean(user)} onLogin={() => go('login')} onGetStarted={() => go('register')} onDashboard={() => go('dashboard')}/>;
+  if (page === 'dashboard') {
+    if (!ready) return <div className="op-auth-page"><div className="op-auth-loading">Opening your OPPOTRON workspace…</div></div>;
+    if (user) return <Workspace user={user} onExit={() => go('home')}/>;
+    return <div className="op-auth-page"><div className="op-auth-card"><div className="op-auth-logo"><span>o.</span> OPPOTRON</div><h1>Welcome to your workspace.</h1><p>Sign in to access your private opportunity intelligence, documents and assistant conversations.</p><button className="op-auth-back" onClick={() => go('login')}>Log in to OPPOTRON <ArrowRight size={16}/></button></div></div>;
+  }
+  return <main className="op-auth-page"><div className="op-auth-card">
+    <div className="op-auth-logo"><span>o.</span> OPPOTRON</div>
+    <div className="op-section-eyebrow"><span/> {page === 'login' ? 'WELCOME BACK' : 'START WITH OPPOTRON'}</div>
+    <h1>{page === 'login' ? 'Good to see you again.' : 'Your next opportunity starts here.'}</h1>
+    <p>{page === 'login' ? 'Access your opportunity desk and pick up where you left off.' : 'Create a private workspace. Then choose whether you are a company or nonprofit.'}</p>
+    <form onSubmit={submitAuth}>
+      <label>Email address<input autoComplete="email" required name="email" type="email" placeholder="you@organisation.co.za" maxLength={254}/></label>
+      <label>Password<input autoComplete={page === 'login' ? 'current-password' : 'new-password'} required name="password" type="password" minLength={6} placeholder={page === 'login' ? 'Your password' : 'At least 6 characters'}/></label>
+      <button type="submit" disabled={loading}>{loading ? 'Working…' : page === 'login' ? 'Log in' : 'Create my workspace'} <ArrowRight size={17}/></button>
+    </form>
+    {message && <div className="op-auth-error" role="alert">{message}</div>}
+    <div className="op-auth-switch">{page === 'login' ? 'New to OPPOTRON?' : 'Already registered?'} <button onClick={() => go(page === 'login' ? 'register' : 'login')}>{page === 'login' ? 'Create an account' : 'Log in'}</button></div>
+    <button className="op-auth-back" onClick={() => go('home')}><ArrowLeft size={14}/> Back to OPPOTRON</button>
+  </div></main>;
 }
 
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
-// BUILDA is a browser-first workspace. Unregister the old PWA worker to prevent stale assets.
+
+// Retire any previously registered BUILDA app shell. OPPOTRON is web-first.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.getRegistrations().then(registrations => {
       registrations.filter(reg => reg.active?.scriptURL.endsWith('/sw.js')).forEach(reg => void reg.unregister());
-    }).catch(() => { /* non-critical */ });
+    }).catch(() => {});
+    if ('caches' in window) {
+      caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('builda-shell-')).map(key => caches.delete(key)))).catch(() => {});
+    }
   });
 }

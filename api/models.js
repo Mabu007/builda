@@ -1,8 +1,10 @@
 import { verifyUser, respondError, only } from './_lib/auth.js';
+import { DEFAULT_MODEL } from './_lib/openrouter.js';
 
 let saved = null;
 let savedAt = 0;
 const fallback = [
+  { id: DEFAULT_MODEL, name: 'Free auto · OpenRouter' },
   { id: 'openai/gpt-4o-mini', name: 'GPT-4o mini' },
   { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
   { id: 'deepseek/deepseek-chat', name: 'DeepSeek Chat' }
@@ -27,7 +29,7 @@ export async function allowedModels() {
     // the catalogue contains more than 120 free-preview entries.
     const pinned = new Set(['openai/gpt-4o-mini', 'google/gemini-2.5-flash', 'deepseek/deepseek-chat']);
     const priorities = models.filter(m => pinned.has(m.id));
-    saved = [...new Map([...priorities, ...models].map(m => [m.id, m])).values()].slice(0, 120);
+    saved = [...new Map([fallback[0], ...priorities, ...models].map(m => [m.id, m])).values()].slice(0, 120);
     savedAt = Date.now();
   } catch { saved = fallback; savedAt = Date.now(); }
   return saved;

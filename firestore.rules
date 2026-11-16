@@ -9,9 +9,10 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly([
         'ownerId','email','name','registration','phone','tradingName','contactPerson',
         'whatsapp','description','category','province','city','coverage','services',
-        'cidb','experience','projects','goals','updatedAt'
+        'cidb','experience','projects','goals','organizationType','updatedAt'
       ])
       && request.resource.data.ownerId == request.auth.uid
+      && request.resource.data.get('organizationType', '') in ['', 'business', 'npo']
       && request.resource.data.get('name','') is string
       && request.resource.data.get('name','').size() <= 200
       && request.resource.data.get('email','') is string
@@ -25,6 +26,36 @@ service cloud.firestore {
       allow create: if isOwner(uid) && profileFieldsValid();
       allow update: if isOwner(uid) && (resource.data.ownerId == uid || !('ownerId' in resource.data)) && profileFieldsValid();
       allow delete: if false;
+      // Each user owns their conversations and immutable messages.
+      match /chats/{chatId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['ownerId','title','sourceTender','createdAt','updatedAt'])
+          && request.resource.data.ownerId == uid
+          && request.resource.data.title is string
+          && request.resource.data.title.size() <= 120
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time
+          && (request.resource.data.sourceTender == null || request.resource.data.sourceTender is map);
+        allow update: if isOwner(uid)
+          && resource.data.ownerId == uid
+          && request.resource.data.ownerId == uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','updatedAt'])
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(uid);
+        match /messages/{messageId} {
+          allow read: if isOwner(uid);
+          allow create: if isOwner(uid)
+            && request.resource.data.keys().hasOnly(['role','content','createdAt'])
+            && request.resource.data.role in ['assistant','user']
+            && request.resource.data.content is string
+            && request.resource.data.content.size() > 0
+            && request.resource.data.content.size() <= 12000
+            && request.resource.data.createdAt == request.time;
+          allow delete: if isOwner(uid);
+          allow update: if false;
+        }
+      }
       match /settings/{docId} {
         allow read: if isOwner(uid);
         allow create, update: if isOwner(uid) && docId == 'preferences'

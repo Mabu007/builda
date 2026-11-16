@@ -26,11 +26,10 @@ function png(size) {
     const xx=(x+.5)/size,yy=(y+.5)/size;
     const backdrop=insideRounded(xx,yy,1,.22);
     let p=backdrop?bg:[0,0,0,0];
-    const stem=xx>=.23&&xx<=.345&&yy>=.18&&yy<=.77;
-    const ring=Math.hypot((xx-.52)/.265,(yy-.545)/.255);
-    const bowl=ring<=1 && ring>=.56 && xx>=.32;
+    const ring=Math.hypot((xx-.48)/.285,(yy-.50)/.285);
+    const bowl=ring<=1 && ring>=.55;
     const dot=Math.hypot(xx-.785,yy-.785)<.048;
-    if(backdrop&&(stem||bowl||dot))p=gold;
+    if(backdrop&&(bowl||dot))p=gold;
     put(x,y,p);
   }
   const head=Buffer.alloc(13);head.writeUInt32BE(size,0);head.writeUInt32BE(size,4);head[8]=8;head[9]=6;
@@ -41,4 +40,4 @@ const small=png(32), ico=Buffer.alloc(22);
 ico.writeUInt16LE(0,0);ico.writeUInt16LE(1,2);ico.writeUInt16LE(1,4);
 ico[6]=32;ico[7]=32;ico[8]=0;ico[9]=0;ico.writeUInt16LE(1,10);ico.writeUInt16LE(32,12);ico.writeUInt32LE(small.length,14);ico.writeUInt32LE(22,18);
 writeFileSync(join(out,'favicon.ico'),Buffer.concat([ico,small]));
-console.log('Created BUILDA PWA icons and favicon.');
+console.log('Created OPPOTRON favicon and icons.');

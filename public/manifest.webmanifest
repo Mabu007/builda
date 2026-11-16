@@ -1,8 +1,8 @@
 {
   "id": "/app",
-  "name": "BUILDA — Contractor Workspace",
-  "short_name": "BUILDA",
-  "description": "Your intelligent South African tender and compliance workspace.",
+  "name": "OPPOTRON — Opportunity Intelligence",
+  "short_name": "OPPOTRON",
+  "description": "Your AI opportunity intelligence workspace for businesses and nonprofits.",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",

@@ -9,16 +9,16 @@ import './landing.css';
 type Props = { onLogin: () => void; onGetStarted: () => void; onDashboard: () => void; loggedIn: boolean };
 const pillars = [
   { number: '01 / ORGANISE', title: 'Document Vault & Compliance', icon: <FolderOpen size={22}/>, description: 'Keep NPO registration, constitution, financial and programme records in one secure library. Track recorded expiry dates and build a stronger administrative foundation.', available: 'Document vault available · AI reading planned' },
-  { number: '02 / DISCOVER', title: 'Funding Opportunities', icon: <HeartHandshake size={22}/>, description: 'Discover relevant grants, corporate CSI programmes, foundations and funders based on your NPO’s mission and reach. Our dedicated source integrations are the next step.', available: 'Funding discovery framework coming next' },
-  { number: '03 / CREATE', title: 'AI Document Creator', icon: <FilePenLine size={22}/>, description: 'Turn your organisation knowledge into proposals, letters and applications. A beautiful Tiptap editor with PDF and Word export is planned; AI draft assistance starts in chat.', available: 'AI draft assistance available · Editor planned' },
-  { number: '04 / PREPARE', title: 'Application Assistant', icon: <ClipboardCheck size={22}/>, description: 'Understand each funder’s requirements, build preparation checklists and keep control of every submission. Application tracking and authorised automation are planned.', available: 'AI checklists available · Tracking planned' }
+  { number: '02 / DISCOVER', title: 'Funding Opportunities', icon: <HeartHandshake size={22}/>, description: 'Explore published grants, corporate CSI calls and foundation funding added through our reviewed discovery system, matched to your nonprofit’s mission.', available: 'Admin-reviewed funding discovery · Matches for NPOs' },
+  { number: '03 / CREATE', title: 'AI Document Creator', icon: <FilePenLine size={22}/>, description: 'Ask AI for a funding proposal draft using your saved organisation information. Edit the text, save private drafts and export through Word-compatible download or print to PDF. Rich-text Tiptap editing is still planned.', available: 'AI drafts, editable documents & exports available' },
+  { number: '04 / PREPARE', title: 'Application Assistant', icon: <ClipboardCheck size={22}/>, description: 'Review published funder requirements, save application notes and checklist progress, and track your submission status. Submissions remain entirely under your control.', available: 'Application checklists and private tracking available' }
 ];
 const steps = [
   ['01','Create your NPO workspace','Register once and give OPPOTRON your organisation’s basic information.'],
   ['02','Tell us your mission','Add your programmes, communities served, focus area and fundraising priorities.'],
   ['03','Keep your records together','Store registration, governance and financial files securely, with useful names and dates.'],
   ['04','Prepare with an AI assistant','Ask for proposal outlines, funding application checklists and plain-language guidance.'],
-  ['05','Discover the right funders','As verified funding sources are connected, see opportunities relevant to your mission.'],
+  ['05','Discover the right funders','See admin-reviewed funding opportunities when published, ranked by your mission and location.'],
   ['06','Apply with confidence','Review requirements and documents before any application is submitted.']
 ];
 
@@ -58,7 +58,7 @@ export default function Landing({ onLogin, onGetStarted, onDashboard, loggedIn }
                 <div className="op-preview-grid">
                   <div className="op-preview-opportunities"><div className="op-preview-subhead"><strong>At your fundraising desk</strong><span>YOUR NEXT STEPS</span></div>
                     <div className="op-preview-item"><span className="op-preview-briefcase"><FileText size={17}/></span><span><strong>Review your organisation documents</strong><small>Build a reusable, private record library</small></span></div>
-                    <div className="op-preview-item"><span className="op-preview-briefcase gold"><HeartHandshake size={17}/></span><span><strong>Funding opportunities</strong><small>Verified grants & CSI sources coming soon</small></span></div>
+                    <div className="op-preview-item"><span className="op-preview-briefcase gold"><HeartHandshake size={17}/></span><span><strong>Funding opportunities</strong><small>Published grants & CSI funding matches</small></span></div>
                     <div className="op-preview-item"><span className="op-preview-briefcase"><FilePenLine size={17}/></span><span><strong>Prepare a proposal outline</strong><small>Ask your OPPOTRON assistant</small></span></div>
                   </div>
                   <div className="op-preview-ai"><span><Sparkles size={17}/> YOUR AI FUNDRAISING ASSISTANT</span><strong>Big mission.<br/>Smaller admin.</strong><p>Break down complex funding requirements into clear, manageable steps.</p><div><CheckCircle2 size={16}/> You stay in control</div></div>
@@ -88,7 +88,7 @@ export default function Landing({ onLogin, onGetStarted, onDashboard, loggedIn }
       </div></section>
       <section className="op-public-workflow" id="how"><div className="op-workflow-inner">
         <div className="op-section-eyebrow light"><span/> A SIMPLER FUNDRAISING WORKFLOW</div>
-        <div className="op-workflow-header"><h2>One organisation profile.<br/><em>A world of possibility.</em></h2><p>Get organised now and grow with OPPOTRON as its funding intelligence tools expand.</p></div>
+        <div className="op-workflow-header"><h2>One organisation profile.<br/><em>A world of possibility.</em></h2><p>Keep your funding work organised, from identifying a reviewed opportunity to preparing your application.</p></div>
         <div className="op-workflow-grid">{steps.map(([number,title,body])=><div className="op-workflow-step" key={number}><span>{number}</span><strong>{title}</strong><p>{body}</p></div>)}</div>
       </div></section>
       <section className="op-public-assistant">
@@ -106,7 +106,7 @@ export default function Landing({ onLogin, onGetStarted, onDashboard, loggedIn }
         <h2>Your mission deserves<br/><em>a stronger back office.</em></h2>
         <p>OPPOTRON is becoming the AI fundraising administration workspace for nonprofits — starting with your organisation profile, secure documents and AI assistance.</p>
         <button onClick={start}>Create your nonprofit workspace <ArrowUpRight size={18}/></button>
-        <small>Available now: NPO profiles, private document vault and AI chat assistance. Dedicated grant sources, Tiptap editing, OCR and application tracking are in development.</small>
+        <small>Available now: NPO profiles, private document vault, AI support, reviewed funding discovery, document drafts and application tracking. OCR, rich-text Tiptap editing and automated submissions remain in development.</small>
       </section>
     </main>
     <footer className="op-public-footer"><div><div className="op-public-logo footer-logo"><span>o<span>.</span></span><strong>OPPOTRON</strong></div><p>Your funding. Your documents. Your future.</p></div>

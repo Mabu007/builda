@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { User } from 'firebase/auth';
-import { signOut } from 'firebase/auth';
+import { signOut, getIdTokenResult } from 'firebase/auth';
 import { collection, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import {
   ArrowRight, ArrowUpRight, Bell, BookOpenText, Bot, BriefcaseBusiness,
@@ -93,6 +93,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
   const [files, setFiles] = useState<VaultFile[]>([]);
   const [notice, setNotice] = useState('');
   const [draftOpportunity, setDraftOpportunity] = useState<FundingOpportunity | null>(null);
+  const [isAdministrator, setIsAdministrator] = useState(false);
   const [model, setModel] = useState('openrouter/free');
   const [models, setModels] = useState<Model[]>([{ id: 'openrouter/free', name: 'Free auto · OpenRouter' }]);
   const [modelSaving, setModelSaving] = useState(false);
@@ -122,6 +123,9 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
     try { localStorage.setItem('oppotron-theme', theme); } catch { /* local preference unavailable */ }
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#101b20' : '#f6f8f7');
   }, [theme]);
+  useEffect(() => {
+    getIdTokenResult(user).then(result => setIsAdministrator(result.claims.admin === true)).catch(() => setIsAdministrator(false));
+  }, [user]);
   useEffect(() => {
     if (!db) {
       setProfileLoading(false); setVaultLoading(false);
@@ -317,6 +321,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
           <div className="bo-settings-stack">
             <section className="bo-panel bo-setting-card"><div className="bo-setting-icon">{theme === 'dark' ? <Moon size={21}/> : <Sun size={21}/>}</div><div><div className="bo-small-kicker">APPEARANCE</div><h3>Workspace theme</h3><p>Choose how OPPOTRON looks on this device.</p><div className="bo-theme-options"><button className={theme === 'light' ? 'active' : ''} onClick={() => setTheme('light')}><Sun size={17}/> Light</button><button className={theme === 'dark' ? 'active' : ''} onClick={() => setTheme('dark')}><Moon size={17}/> Dark</button></div></div></section>
             <section className="bo-panel bo-setting-card"><div className="bo-setting-icon"><Bot size={21}/></div><div><div className="bo-small-kicker">AI FUNDRAISING ASSISTANT</div><h3>AI model</h3><p>Choose the model used by your fundraising assistant. A free fallback may be used if a selected provider is unavailable.</p><label>Preferred model<select value={model} onChange={e => setModel(e.target.value)}>{!models.some(m=>m.id===model) && <option value={model}>{model}</option>}{models.map(m => <option key={m.id} value={m.id}>{m.name} · {m.id}</option>)}</select></label><div className="bo-npo-settings-actions"><button className="bo-primary" onClick={() => void saveModel()} disabled={modelSaving}>{modelSaving ? 'Saving…' : 'Save model preference'} <Check size={16}/></button><button className="bo-outline" onClick={() => void testAI()} disabled={aiCheck.busy}><Bot size={16}/>{aiCheck.busy ? 'Testing…' : 'Test AI connection'}</button></div>{aiCheck.message && <div role="status" className={aiCheck.success ? 'bo-ai-test-good' : 'bo-inline-error'}>{aiCheck.message}</div>}</div></section>
+            {isAdministrator && <section className="bo-panel bo-setting-card"><div className="bo-setting-icon"><ShieldCheck size={21}/></div><div><div className="bo-small-kicker">VERIFIED PLATFORM ADMINISTRATOR</div><h3>Administration dashboard</h3><p>Manage funding opportunities, review source extractions, and inspect organisation accounts.</p><a className="bo-primary" href="/admin"><ShieldCheck size={16}/> Open Admin Dashboard <ArrowUpRight size={15}/></a></div></section>}
             <section className="bo-panel bo-setting-card"><div className="bo-setting-icon"><LockKeyhole size={21}/></div><div><div className="bo-small-kicker">ACCOUNT PRIVACY</div><h3>Protected organisation workspace</h3><p>Signed in as <strong>{user.email}</strong>. Your organisation profile, uploaded documents and chat history are scoped to your signed-in account.</p></div></section>
           </div>
         </>}

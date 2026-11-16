@@ -108,10 +108,21 @@ async function fetchPdf(safe){
   if(Number(response.headers.get('content-length')||0)>10000000)throw failure('Source document exceeds the 10 MB ingestion limit.',400);
   const type=String(response.headers.get('content-type')||'').toLowerCase();
   if(!type.includes('pdf')&&!/\.pdf(?:\?|$)/i.test(current))throw failure('Source document is not a PDF.',400);
-  const bytes=await response.arrayBuffer();
-  if(bytes.byteLength>10000000||bytes.byteLength<5)throw failure('Source PDF size is invalid.',400);
-  if(Buffer.from(bytes.slice(0,5)).toString()!=='%PDF-')throw failure('Source is not a valid PDF.',400);
-  return {bytes,size:bytes.byteLength};
+  const reader=response.body?.getReader();
+  if(!reader)throw failure('No document bytes were returned.',400);
+  const chunks=[];let size=0;
+  try{
+   while(true){
+    const {value,done}=await reader.read();
+    if(done)break;
+    size+=value.byteLength;
+    if(size>10000000){await reader.cancel();throw failure('Source PDF exceeds 10 MB.',400);}
+    chunks.push(Buffer.from(value));
+   }
+  }finally{reader.releaseLock();}
+  const bytes=Buffer.concat(chunks);
+  if(size<5||bytes.subarray(0,5).toString()!=='%PDF-')throw failure('Source does not contain a valid PDF header.',400);
+  return {bytes,size};
  }
  throw failure('Too many document redirects.',400);
 }

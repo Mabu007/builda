@@ -137,9 +137,9 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
     errors=[...errors,...result.errors.map(e=>'Lead '+e.leadId+': '+e.message)];
     setImportProgress({processed,total,created,skipped,errors});
    }
+   await fetchSection('funders');
    if(errors.length)setError(errors.length+' research leads need attention. Retrying is safe; existing records are not overwritten.');
    else setNotice('Research import complete: '+created+' added, '+skipped+' already present. Funders and opportunities are ready.');
-   await fetchSection('funders');
   }catch(e){setError('Import interrupted. You can retry safely. '+(e instanceof Error?e.message:''));}
   finally{setSeedBusy(false);}
  };
@@ -214,7 +214,7 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',onKey);};
  },[Boolean(editor),Boolean(selectedUser),Boolean(funderEditor),busy]);
  const recent=(jobs||[]).find(job=>job.id===jobActive);
- const npos=users.filter(record=>Boolean(record.organisation&&(record.organisation.name||record.organisation.organizationType==='npo')));
+ const npos=users.filter(record=>Boolean(record.organisation&&record.organisation.organizationType!=='business'&&(record.organisation.name||record.organisation.organizationType==='npo')));
  const filteredNpos=npos.filter(record=>[record.email,record.uid,record.organisation?.name,record.organisation?.category,record.organisation?.province].some(value=>String(value||'').toLowerCase().includes(userSearch.trim().toLowerCase())));
  const filteredFunders=funders.filter(record=>[record.name,record.description,record.geography,...(record.sectors||[]),...(record.fundingTypes||[])].some(value=>String(value||'').toLowerCase().includes(funderSearch.trim().toLowerCase()))).sort((a,b)=>a.name.localeCompare(b.name));
  const filteredUsers=users.filter(record=>[record.email,record.uid,record.organisation?.name,record.organisation?.category,record.organisation?.province]

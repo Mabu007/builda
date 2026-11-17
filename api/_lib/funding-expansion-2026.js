@@ -362,5 +362,36 @@ export const ADDITIONAL_VERIFIED_CALLS=[
     "published": false,
     "lastCheckedAt": "2026-11-17",
     "evidenceSourceType": "needs-current-official-notice"
+  },
+  {
+    "title": "Rand Water Foundation – NGO Water, Sanitation and Hygiene Partnerships 2026/27",
+    "funder": "Rand Water Foundation",
+    "sector": "Community Development & Housing",
+    "description": "Call for water, sanitation and hygiene service delivery partnership proposals for eligible nongovernmental organisations in the 2026/27 programme.",
+    "eligibility": "Non-governmental organisations meeting the Rand Water Foundation's WASH service-delivery, registration and programme requirements. Read the current NGO funding application form and call documents for geographic and compliance conditions.",
+    "coverage": "South Africa; check WASH call for geographic eligibility",
+    "deadline": "2026-12-04",
+    "round": "Rand Water Foundation 2026/27 WASH NGO partnership",
+    "sourceUrl": "https://www.randwater.co.za/rwf_announcements.php",
+    "applicationUrl": "",
+    "contactEmail": "",
+    "contactPhone": "011 682 0911",
+    "amount": "",
+    "applicationInstructions": "Visit Rand Water Foundation's official adverts page; download the 2026/27 WASH NGO call document and NGO funding application form. Follow the current notice's submission method by 4 December 2026; do not reuse 2025 forms.",
+    "requirements": [
+      "2026/27 NGO funding application form",
+      "WASH programme proposal",
+      "NPO registration and supporting compliance according to latest call"
+    ],
+    "researchType": "WASH delivery partnership",
+    "researchCaveat": "A specific WASH NGO partnership selection, not an unrestricted donation.",
+    "notes": "Official Rand Water Foundation adverts page lists 4 Dec 2026 closing; submission route must be read from the attached 2026/27 documents.",
+    "registration": "",
+    "source": "official-funder-audit-2026",
+    "verificationStatus": "verified",
+    "status": "published",
+    "published": true,
+    "lastCheckedAt": "2026-11-17",
+    "evidenceSourceType": "official-funder-website"
   }
 ];

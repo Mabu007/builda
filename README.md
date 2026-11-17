@@ -20,9 +20,9 @@ The `OPPOTRON_2025_CSI_Company_Funder_Research` dossier provides 120 identifiabl
 
 - These are **historical CSI funder research profiles only**. No open application, available grant amount, funding deadline, website or CSI email is inferred from published company expenditure.
 - Each record stores its original company name, historic focus areas, 2024/25 and 2023/24 figures (R millions), note/qualification, original report citation and handbook page in `funders/{id}.csiResearch`. They are viewable in the NPO Funders directory with a historical-spending explanation.
-- A one-time production-only importer runs **after** the application tests, TypeScript checks and Vite build. It uses existing Firebase service credentials from the Vercel server environment, with no credentials in GitHub. Preview/CI builds skip it.
+- The **one-time production-only import completed successfully on 17 November 2026**: 119 new funders, one existing funder enriched, no errors; three imported records were read back from production Firestore. The importer used Firebase service credentials from Vercel and ran after the build checks. Preview/CI builds skipped the migration.
 - The import uses the same deterministic funder IDs as the admin dashboard. Existing names, contact details, curated descriptions, classifications and private notes remain unchanged; only historical research metadata and missing fields are enriched. Repeated execution skips already imported versions.
-- After the first successful production deployment, remove the temporary `scripts/import-2025-csi-once.mjs` invocation from `package.json` so future builds do not perform a migration. Verify Vercel build output includes a successful imported count and all company records.
+- The temporary build invocation was removed after successful import. The guarded migration script remains available for manual disaster recovery but does not run on normal deployments.
 
 ### Funder directory, NPO network and Gauteng ECD/arts research
 

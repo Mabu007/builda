@@ -14,6 +14,16 @@ OPPOTRON is an NPO-focused SaaS workspace for secure organisational records, rev
 - **Applications**: private application-status tracking, notes, and funding requirement checklists. OPPOTRON does **not** submit applications, sign declarations or collect actual funding awards automatically.
 - **Organisation**: optional NPO profile drives funding relevance from 30% completion onward. The general-purpose Q&A chatbot, floating Ask OPPOTRON launcher, chat navigation and `/api/assistant` endpoint have been retired; previously stored chat records are not deleted.
 
+### Corporate CSI 2025 research (120 companies)
+
+The `OPPOTRON_2025_CSI_Company_Funder_Research` dossier provides 120 identifiable companies (not 122), 112 2024/25-period reported spending figures, five undisclosed figures, three unavailable figures and 26 material amount qualifications from Trialogue's 2025 handbook, pages 79–83.
+
+- These are **historical CSI funder research profiles only**. No open application, available grant amount, funding deadline, website or CSI email is inferred from published company expenditure.
+- Each record stores its original company name, historic focus areas, 2024/25 and 2023/24 figures (R millions), note/qualification, original report citation and handbook page in `funders/{id}.csiResearch`. They are viewable in the NPO Funders directory with a historical-spending explanation.
+- A one-time production-only importer runs **after** the application tests, TypeScript checks and Vite build. It uses existing Firebase service credentials from the Vercel server environment, with no credentials in GitHub. Preview/CI builds skip it.
+- The import uses the same deterministic funder IDs as the admin dashboard. Existing names, contact details, curated descriptions, classifications and private notes remain unchanged; only historical research metadata and missing fields are enriched. Repeated execution skips already imported versions.
+- After the first successful production deployment, remove the temporary `scripts/import-2025-csi-once.mjs` invocation from `package.json` so future builds do not perform a migration. Verify Vercel build output includes a successful imported count and all company records.
+
 ### Funder directory, NPO network and Gauteng ECD/arts research
 
 - **Funders (Admin):** a permanent directory of funder/CSI/partner organisations with searchable profiles, sector and support types, direct contacts, source URLs and historical/current call statuses. A funder remains visible to admins when a round closes.

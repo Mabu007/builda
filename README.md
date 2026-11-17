@@ -14,6 +14,16 @@ OPPOTRON is an NPO-focused SaaS workspace for secure organisational records, rev
 - **Applications**: private application-status tracking, notes, and funding requirement checklists. OPPOTRON does **not** submit applications, sign declarations or collect actual funding awards automatically.
 - **Organisation**: optional NPO profile drives funding relevance from 30% completion onward. The general-purpose Q&A chatbot, floating Ask OPPOTRON launcher, chat navigation and `/api/assistant` endpoint have been retired; previously stored chat records are not deleted.
 
+### Funder directory, NPO network and Gauteng ECD/arts research
+
+- **Funders (Admin):** a permanent directory of funder/CSI/partner organisations with searchable profiles, sector and support types, direct contacts, source URLs and historical/current call statuses. A funder remains visible to admins when a round closes.
+- **NPOs (Admin):** searchable profiles from the existing Firebase organisation accounts (name, programme category, province, registration and profile readiness). Users without an organisation profile remain in **Users**. These are not invented beneficiary records and no private documents are exposed.
+- **Research seed:** the original 16 Nov 2026 Gauteng ECD and children's arts tracker is preserved in `api/_lib/gauteng-research-data.js`: **50 research leads associated with 37 distinct funders**. On the first admin visit to **Funders** after deploying, an idempotent admin-only import starts automatically, showing batch progress and permitting safe retry. The records are created in the shared `funders` and `opportunities` collections; no new Firebase rules are necessary.
+- **Publication safeguards:** only eight explicitly dated `Open application` items from the source are eligible for initial publication if their deadlines have not passed at import. The one unverified deadline-extension entry and the remaining loans, training, platforms, closed, ongoing and unconfirmed leads stay as private drafts. Research records are marked **unverified** and preserve each source's original status, date, fit, value, next action and eligibility caveats.
+- **Source URLs are not application links.** The app does not invent a submission form when a lead only supplies a general information page. Manual entries remain publishable without a URL or funder verification; the research seed has a more conservative initial-publication policy.
+- **Admin controls:** admins can review, edit, publish or unpublish imported opportunity records. Re-running the research import does not overwrite edited records.
+- **Research scope:** these are leads for Gauteng applicants and selected national programmes; this is not a database of 50 currently open grants. Independently confirm deadlines, suitability (especially standalone crèches vs networks), fees and whether support is a grant, loan or non-cash programme.
+
 ### Admin Dashboard
 From the regular `/login` page, use the small **Admin access** link to open `/admin/login`; or visit `/admin` when signed in using an account with a **Firebase Authentication custom claim `admin: true`**. The backend cryptographically verifies the claim and Firestore rules check it again. Regular users are denied and the API keys are never passed to clients.
 

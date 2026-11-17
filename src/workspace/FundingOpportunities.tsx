@@ -5,6 +5,7 @@ import {ArrowRight,ArrowUpRight,Bookmark,CalendarDays,ClipboardCheck,ExternalLin
 import {db} from '../firebase';
 import {matchOpportunity,opportunityExpired,profileProgress,type FundingOpportunity} from './funding';
 import {confirmedCall} from './confirmed-funding';
+import {NPO_FUNDING_CATEGORIES,fundingCategory} from './funding-categories';
 import {applicationRoute,applicationSteps,daysToDeadline,displayFundingDate,fundingState,fundingStatusText,importantCondition,plainSummary,whoCanApply} from './opportunity-display';
 import './funding-ui.css';
 type Props={user:User;profile:Record<string,string>;files:{name:string;category:string}[];onPrepare:(op:FundingOpportunity)=>void;onApplications:()=>void;onProfile:()=>void;onFunder:(name:string)=>void;openOpportunityId?:string;onOpenHandled?:()=>void};
@@ -35,14 +36,14 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
   return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',onKey);};
  },[Boolean(selected)]);
  const readiness=profileProgress(profile);
- const sectors=useMemo(()=>[...new Set(all.map(o=>o.sector).filter(Boolean))].sort(),[all]);
+ const sectors=NPO_FUNDING_CATEGORIES;
  const matched=useMemo(()=>all.filter(op=>op.status==='published').map(op=>({op,match:matchOpportunity(op,profile,files)}))
   .sort((a,b)=>{
    const closedDiff=Number(opportunityExpired(a.op))-Number(opportunityExpired(b.op));
    return closedDiff || (readiness.personalised?b.match.score-a.match.score:0) ||
     (a.op.deadline||'9999').localeCompare(b.op.deadline||'9999') || a.op.title.localeCompare(b.op.title);
   }),[all,profile,files,readiness.personalised]);
- const visible=matched.filter(row=>(!sector||row.op.sector===sector)&&(!search||[row.op.title,row.op.funder,row.op.sector,row.op.description,row.op.contactEmail||'',row.op.contactPhone||''].join(' ').toLowerCase().includes(search.trim().toLowerCase())));
+ const visible=matched.filter(row=>(!sector||fundingCategory(row.op)===sector)&&(!search||[row.op.title,row.op.funder,row.op.sector,row.op.description,row.op.contactEmail||'',row.op.contactPhone||''].join(' ').toLowerCase().includes(search.trim().toLowerCase())));
  const save=async(op:FundingOpportunity)=>{
   if(!db||working)return;setWorking(op.id);
   try{
@@ -87,10 +88,10 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
   </section>}
    <div className="fu-opportunities-summary"><span><Sparkles size={17}/> <strong>{loading?'—':matched.length}</strong> published opportunities</span><small>{readiness.personalised?'Tailored ranking enabled · All opportunities remain visible':'Browse without a profile · Personalisation starts at 30%'} · Check funder requirements</small></div>
    <div className="fu-toolbar"><label className="fu-search"><Search size={18}/><input aria-label="Search funding opportunities" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search funding, funders or programmes…"/></label>
-    <select aria-label="Funding sector" value={sector} onChange={e=>setSector(e.target.value)}><option value="">All focus areas</option>{sectors.map(x=><option key={x}>{x}</option>)}</select></div>
+    <select aria-label="Funding sector" value={sector} onChange={e=>setSector(e.target.value)}><option value="">All 11 focus areas</option>{sectors.map(x=><option key={x}>{x}</option>)}</select></div>
    {loading?<div className="bo-skeleton-wrap">{[1,2,3].map(i=><div className="bo-skeleton" key={i}/>)}</div>:
     visible.length?<div className="fu-opportunity-grid">{visible.map(({op})=><article className="fu-opportunity-card" key={op.id}>
-     <div className="fu-card-overline"><span><HeartHandshake size={15}/> {op.sector||'Funding'}</span><span className={'fu-card-state fu-state-'+fundingState(op)}>{fundingStatusText(op)}</span></div>
+     <div className="fu-card-overline"><span><HeartHandshake size={15}/> {fundingCategory(op)}</span><span className={'fu-card-state fu-state-'+fundingState(op)}>{fundingStatusText(op)}</span></div>
      <h3>{op.title}</h3><p className="fu-funder">{op.funder}</p>
      <p className="fu-desc">{plainSummary(op)}</p>
       

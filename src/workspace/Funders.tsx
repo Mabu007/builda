@@ -6,6 +6,7 @@ import {db} from '../firebase';
 import type {FundingOpportunity} from './funding';
 import {confirmedFunderContacts} from './confirmed-funding';
 import {displayFundingDate,fundingState} from './opportunity-display';
+import DirectoryPagination,{clampPage} from './DirectoryPagination';
 import './funding-ui.css';
 
 export type PublicFunder={id:string;name:string;description:string;focus:string[];geography:string;website:string;contactEmail:string;contactPhone:string};
@@ -13,6 +14,8 @@ type Props={user:User;focusName?:string;onOpportunity:(id:string)=>void};
 export default function Funders({user,focusName='',onOpportunity}:Props){
  const [funders,setFunders]=useState<PublicFunder[]>([]),[opportunities,setOpportunities]=useState<FundingOpportunity[]>([]);
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[search,setSearch]=useState(focusName),[selected,setSelected]=useState<PublicFunder|null>(null);
+ const pageSize=20;
+ const [page,setPage]=useState(1);
  useEffect(()=>{if(focusName){setSearch(focusName);setSelected(null);}},[focusName]);
  useEffect(()=>{
   let active=true;
@@ -43,14 +46,21 @@ export default function Funders({user,focusName='',onOpportunity}:Props){
  const linked=useMemo(()=>{
   const map=new Map<string,FundingOpportunity[]>();
   for(const op of opportunities){
-   if(op.status!=='published'||fundingState(op)==='closed')continue;
+   if(op.status!=='published'||fundingState(op)!=='open')continue;
    const name=op.funder.trim().toLowerCase();
    map.set(name,[...(map.get(name)||[]),op]);
   }
   for(const calls of map.values())calls.sort((a,b)=>(a.deadline||'9999').localeCompare(b.deadline||'9999'));
   return map;
  },[opportunities]);
- const results=useMemo(()=>funders.filter(f=>[f.name,f.description,...f.focus,f.geography].join(' ').toLowerCase().includes(search.trim().toLowerCase())),[funders,search]);
+ // Funders with actionable, currently open calls rank first. No date or unverified
+ // "contact-only" record is counted as an open call.
+ const results=useMemo(()=>funders.filter(f=>[f.name,f.description,...f.focus,f.geography].join(' ').toLowerCase().includes(search.trim().toLowerCase()))
+  .sort((a,b)=>(linked.get(b.name.trim().toLowerCase())?.length||0)-(linked.get(a.name.trim().toLowerCase())?.length||0) ||
+   a.name.localeCompare(b.name)),[funders,search,linked]);
+ const currentPage=clampPage(page,results.length,pageSize);
+ const pageItems=useMemo(()=>results.slice((currentPage-1)*pageSize,currentPage*pageSize),[results,currentPage]);
+ useEffect(()=>setPage(1),[search]);
  const getContact=(f:PublicFunder)=>{
   const known=confirmedFunderContacts[f.name];
   return {website:f.website||known?.website||'',email:f.contactEmail||known?.email||'',phone:f.contactPhone||''};
@@ -71,7 +81,7 @@ export default function Funders({user,focusName='',onOpportunity}:Props){
   <div className="fu-directory-toolbar"><label className="fu-search"><Search size={18}/><input aria-label="Search funders" placeholder="Search a funder or funding focus…" value={search} onChange={e=>setSearch(e.target.value)}/></label><span>{loading?'Loading…':results.length+' funders'}</span></div>
   {loading?<div className="bo-skeleton-wrap">{[1,2,3].map(i=><div key={i} className="bo-skeleton"/>)}</div>:results.length?
    <div className="fu-simple-directory"><table><thead><tr><th>FUNDER</th><th>WHAT THEY SUPPORT</th><th>OPPORTUNITIES</th><th>CONTACT</th></tr></thead>
-    <tbody>{results.map(f=>{
+    <tbody>{pageItems.map(f=>{
      const calls=openCalls(f.name);
      return <tr key={f.id||f.name}>
       <td data-label="FUNDER"><button className="fu-directory-name" onClick={()=>setSelected(f)}><strong>{f.name}</strong><ArrowRight size={15}/></button></td>
@@ -79,7 +89,7 @@ export default function Funders({user,focusName='',onOpportunity}:Props){
       <td data-label="OPPORTUNITIES">{calls.length?<button className="fu-directory-opps" onClick={()=>setSelected(f)}><span>{calls.length} available {calls.length===1?'call':'calls'}</span><ArrowRight size={14}/></button>:<span className="fu-directory-muted">No open calls listed</span>}</td>
       <td data-label="CONTACT">{contacts(f,true)}</td>
      </tr>;
-    })}</tbody></table></div>:
+    })}</tbody></table><DirectoryPagination page={currentPage} pageSize={pageSize} total={results.length} label="funders" onPage={setPage}/></div>:
    <div className="fu-empty"><HeartHandshake size={28}/><h2>No funders found</h2><p>{funders.length?'Try a different search.':'Funders will appear after being added.'}</p></div>}
   {selected&&<div className="fu-modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setSelected(null);}}>
    <section className="fu-funder-sheet" role="dialog" aria-modal="true" aria-labelledby="fu-funder-title">

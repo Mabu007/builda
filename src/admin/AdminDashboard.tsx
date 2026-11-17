@@ -327,6 +327,29 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
     </div>}
    </div>
   </main>
+  {funderEditor&&<div className="oa-modal-backdrop"><section className="oa-modal oa-funder-modal" role="dialog" aria-modal="true" aria-labelledby="oa-funder-dialog-title">
+   <div className="oa-modal-head"><div><div className="oa-kicker">FUNDER DIRECTORY</div><h2 id="oa-funder-dialog-title">{funderEditor.id?'Funder details':'New funder'}</h2><p>Save a funder even if no grant is currently open. Contact details are optional.</p></div><button aria-label="Close funder editor" onClick={()=>setFunderEditor(null)}><X size={20}/></button></div>
+   {error&&<div className="oa-editor-error" role="alert">{error}</div>}
+   <form onSubmit={e=>{e.preventDefault();void saveFunderDetails();}}>
+    <div className="oa-modal-scroll">
+     <div className="oa-form-grid">
+      <label className="full">Funder / organisation name *<input autoFocus required maxLength={180} disabled={Boolean(funderEditor.id)} value={funderEditor.name} onChange={e=>setFunderEditor({...funderEditor,name:e.target.value})}/></label>
+      <label className="full">Website (optional)<input type="url" value={funderEditor.website||''} onChange={e=>setFunderEditor({...funderEditor,website:e.target.value})} placeholder="https://example.org"/></label>
+      <label>Email / CSI contact<input type="email" value={funderEditor.contactEmail||''} onChange={e=>setFunderEditor({...funderEditor,contactEmail:e.target.value})} placeholder="csi@example.org"/></label>
+      <label>Phone / WhatsApp<input type="tel" value={funderEditor.contactPhone||''} onChange={e=>setFunderEditor({...funderEditor,contactPhone:e.target.value})} placeholder="+27 …"/></label>
+      <label className="full">Who they fund / what they support<textarea rows={3} maxLength={2400} value={funderEditor.description||''} onChange={e=>setFunderEditor({...funderEditor,description:e.target.value})}/></label>
+      <label className="full">Internal research notes<textarea rows={3} maxLength={2500} value={funderEditor.notes||''} onChange={e=>setFunderEditor({...funderEditor,notes:e.target.value})}/></label>
+     </div>
+     {funderEditor.researchLeadCount?<div className="oa-funder-sources"><div className="oa-kicker">RESEARCH EVIDENCE</div><p>{funderEditor.researchLeadCount} leads · Last checked {funderEditor.researchLastCheckedAt||'not recorded'}</p>
+      {(funderEditor.fundingTypes||[]).length>0&&<p><strong>Support types:</strong> {funderEditor.fundingTypes?.join(', ')}</p>}
+      {(funderEditor.researchStatuses||[]).length>0&&<p><strong>Recorded statuses:</strong> {funderEditor.researchStatuses?.join(' · ')}</p>}
+      {(funderEditor.sourceUrls||[]).slice(0,6).map(url=><a key={url} target="_blank" rel="noopener noreferrer" href={url}>{url}<ExternalLink size={13}/></a>)}
+     </div>:null}
+     <p className="oa-caveat">A funder's existence does not confirm an open application. Review each funding call independently before encouraging applications.</p>
+    </div>
+    <div className="oa-modal-actions"><button type="button" className="oa-outline" onClick={()=>setFunderEditor(null)}>Cancel</button><button type="submit" className="oa-primary" disabled={busy}>{busy?'Saving…':'Save funder'} <Check size={16}/></button></div>
+   </form>
+  </section></div>}
   {selectedUser&&<div className="oa-modal-backdrop"><section className="oa-modal oa-user-modal" role="dialog" aria-modal="true" aria-labelledby="oa-user-title">
     <div className="oa-modal-head"><div><span className="oa-kicker">REGISTERED ACCOUNT</span><h2 id="oa-user-title">{selectedUser.organisation?.name?String(selectedUser.organisation.name):'Account details'}</h2><p>Firebase account and saved organisation metadata.</p></div><button aria-label="Close account details" onClick={()=>setSelectedUser(null)}><X size={21}/></button></div>
     <div className="oa-modal-scroll"><dl className="oa-user-details">{([

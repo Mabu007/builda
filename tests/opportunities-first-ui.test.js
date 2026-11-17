@@ -27,7 +27,8 @@ test('funding profile threshold is 3 of 10 fields (30%)', () => {
 
 test('funding feed lists published opportunities before onboarding and retains unmatched results', () => {
   const ui = source('src/workspace/FundingOpportunities.tsx');
-  assert.match(ui, /all\.filter\(op=>op\.status==='published'\)/);
+  assert.match(ui, /directoryRequest<DirectoryPage<FundingOpportunity>>/);
+  assert.match(ui, /kind=opportunities/);
   assert.doesNotMatch(ui, /filter\(row=>row\.match\.eligible\)/);
   assert.match(ui, /onProfile:=>void|onProfile:\(\)=>void/);
   assert.match(ui, /Personalisation begins at 30%/);
@@ -35,7 +36,8 @@ test('funding feed lists published opportunities before onboarding and retains u
 
 test('home funding briefing shows published calls even for empty profiles', () => {
   const briefing = source('src/workspace/FundingBriefing.tsx');
-  assert.match(briefing, /opportunities\.filter\(x=>x\.status==='published'\)/);
+  assert.match(briefing, /kind=featured/);
+  assert.doesNotMatch(briefing, /onSnapshot/);
   assert.doesNotMatch(briefing, /filter\(item=>item\.match\.eligible\)/);
 });
 

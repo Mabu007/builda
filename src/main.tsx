@@ -6,9 +6,11 @@ import {
 } from 'firebase/auth';
 import { ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import { auth } from './firebase';
-import Landing from './oppo/Landing';
-import Workspace from './workspace/Workspace';
-import AdminDashboard from './admin/AdminDashboard';
+// Route-level splitting: loading the landing page must not download the admin
+// dashboard or the authenticated workspace (and vice versa).
+const Landing = React.lazy(() => import('./oppo/Landing'));
+const Workspace = React.lazy(() => import('./workspace/Workspace'));
+const AdminDashboard = React.lazy(() => import('./admin/AdminDashboard'));
 
 type Page = 'home' | 'login' | 'register' | 'dashboard' | 'admin' | 'admin-login';
 const pageFor = (path: string): Page => path === '/admin/login' ? 'admin-login' : path.startsWith('/admin') ? 'admin' : path.startsWith('/app') ? 'dashboard' : path === '/login' ? 'login' : path === '/register' ? 'register' : 'home';
@@ -95,7 +97,7 @@ function App() {
   </div></main>;
 }
 
-createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
+createRoot(document.getElementById('root')!).render(<React.StrictMode><React.Suspense fallback={<div className="op-auth-page"><div className="op-auth-loading">Opening OPPOTRON…</div></div>}><App/></React.Suspense></React.StrictMode>);
 
 // Retire any previously registered BUILDA app shell. OPPOTRON is web-first.
 if ('serviceWorker' in navigator) {

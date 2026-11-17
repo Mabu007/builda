@@ -45,7 +45,8 @@ test('official Scatec economic opportunity application is linked directly, not t
 test('funder directory links published opportunities but keeps internal drafts private',()=>{
  const source=src('src/workspace/Funders.tsx');
  const api=src('api/funders.js');
- assert.match(source,/op\.status!=='published'/);
+ assert.match(source,/kind=funder-calls/);
+ assert.doesNotMatch(source,/onSnapshot/);
  assert.match(source,/onOpportunity\(op\.id\)/);
  assert.match(source,/contactPhone/);
  assert.match(api,/await verifyUser\(req\)/);

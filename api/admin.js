@@ -60,7 +60,8 @@ export async function importResearchBatch(token,{offset=0,limit=5}={},actor='adm
   const item=researchToOpportunity(row);
   try{
    const id=identityKey(normalizeOpportunity(item));
-   if(await firestore.get(token,opportunityPath(id))){skipped++;continue;}
+   const existing=await firestore.get(token,opportunityPath(id));
+   if(existing){skipped++;try{await upsertFunder(token,existing);}catch{}continue;}
    try{await insertOpportunity(token,item,{actor});imported++;}
    catch(error){if(error.status===409)skipped++;else throw error;}
   }catch(error){errors.push({leadId:row.ID,message:String(error.message||error).slice(0,180)});}

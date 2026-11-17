@@ -34,7 +34,7 @@ const emptyEditor:Editor={
  coverage:'',amount:'',deadline:'',round:'',applicationUrl:'',sourceUrl:'',contactEmail:'',contactPhone:'',applicationInstructions:'',
  requirementsText:'',documentsText:'',verificationStatus:'unverified',status:'draft',notes:''
 };
-const sectors=['Education','Youth development','Healthcare','Community development','Food security','Environment','Women empowerment','Disability inclusion','Arts and culture','Sports','Economic empowerment','Human rights','General','Other'];
+const sectors=['Education & Research','Social Services & Welfare','Health & Wellness','Arts, Culture & Recreation','Community Development & Housing','Environment & Conservation','Law, Advocacy & Human Rights','Religion & Faith-Based Services','Philanthropy & Volunteering','Business & Professional Associations','International Activities','Education','Youth development','Healthcare','Community development','Food security','Environment','Women empowerment','Disability inclusion','Arts and culture','Sports','Economic empowerment','Human rights','General','Other'];
 const sections:{id:Section;label:string;icon:React.ReactNode}[]=[
  {id:'overview',label:'Overview',icon:<LayoutDashboard size={18}/>},
  {id:'users',label:'Users',icon:<Users size={18}/>},

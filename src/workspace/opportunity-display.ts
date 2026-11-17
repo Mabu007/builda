@@ -7,7 +7,9 @@ export function fundingState(op:FundingOpportunity,now=Date.now()):FundingState{
   const end=Date.parse(op.deadline+'T23:59:59+02:00');
   if(Number.isFinite(end))return end>=now?'open':'closed';
  }
- return op.researchStatus==='Open application'?'enquire':'enquire';
+ // Rolling only when explicitly established by the current official funder notice.
+ if(/^rolling applications\b/i.test(op.round||'') && op.verificationStatus==='verified')return 'open';
+ return 'enquire';
 }
 export const displayFundingDate=(date?:string)=>{
  if(!date)return 'Not specified';
@@ -21,7 +23,7 @@ export function daysToDeadline(op:FundingOpportunity,now=Date.now()):number|null
 }
 export function fundingStatusText(op:FundingOpportunity,now=Date.now()){
  const s=fundingState(op,now);
- return s==='closed'?'Closed':s==='open'?'Open for applications':'Contact funder';
+ return s==='closed'?'Closed':s==='open'&&!op.deadline?'Open · rolling applications':s==='open'?'Open for applications':'Contact funder';
 }
 export function plainSummary(op:FundingOpportunity){
  const confirmed=confirmedCall(op);

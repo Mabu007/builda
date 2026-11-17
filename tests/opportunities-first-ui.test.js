@@ -102,4 +102,5 @@ test('NPO workspace links to funders and linked funding records',()=>{
  assert.match(ui,/<Funders user=/);
  assert.match(directory,/onOpportunity\(op\.id\)/);
  assert.match(directory,/contactEmail/);
+ assert.match(directory,/WHAT THEY SUPPORT/);
 });

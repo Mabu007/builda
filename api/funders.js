@@ -9,28 +9,19 @@ export function publicFunder(record={}){
  const name=String(record.name||'').trim();
  const website=publicUrl(record.website||'') ||
   (Array.isArray(record.sourceUrls)?record.sourceUrls.map(url=>publicUrl(url)).find(Boolean):'') || '';
+ const cleaned=String(record.description||'').trim();
+ const focus=(Array.isArray(record.sectors)?record.sectors:[]).map(x=>String(x||'').trim())
+  .filter(x=>x&&!/^(corporate csi|general|other)$/i.test(x)).slice(0,15);
+ // The historical CSI report is an internal research aid, not public-facing funder copy.
  return {
   id:String(record.id||record.slug||'').slice(0,80),
   name:name.slice(0,180),
-  description:String(record.description||'').slice(0,2400),
-  focus:Array.isArray(record.sectors)?record.sectors.map(v=>String(v).slice(0,80)).slice(0,12):[],
-  support:Array.isArray(record.fundingTypes)?record.fundingTypes.map(v=>String(v).slice(0,100)).slice(0,12):[],
+  description:/^Historically reported CSI focus:/i.test(cleaned)?'':cleaned.slice(0,450),
+  focus,
   geography:String(record.geography||'').slice(0,240),
   website,
   contactEmail:String(record.contactEmail||'').slice(0,254),
-  contactPhone:String(record.contactPhone||'').slice(0,100),
-  historicalCsi:record.csiResearch?.sourceEdition===2025?{
-   reported2024_25Rm:typeof record.csiResearch.reported2024_25Rm==='number'?record.csiResearch.reported2024_25Rm:null,
-   reported2024_25Label:String(record.csiResearch.reported2024_25Label||'Not available'),
-   reported2023_24Rm:typeof record.csiResearch.reported2023_24Rm==='number'?record.csiResearch.reported2023_24Rm:null,
-   reported2023_24Label:String(record.csiResearch.reported2023_24Label||'Not available'),
-   focus:String(record.csiResearch.reportedDevelopmentFocus||'').slice(0,1500),
-   report:String(record.csiResearch.sourceReport||'').slice(0,380),
-   handbookPage:Number(record.csiResearch.page||0),
-   qualification:String(record.csiResearch.qualification||'').slice(0,750),
-   reportPeriod:'2024/25 handbook comparison',
-   researchStatus:'Historical CSI spending, not a current funding call'
-  }:undefined
+  contactPhone:String(record.contactPhone||'').slice(0,100)
  };
 }
 export default async function handler(req,res){

@@ -1,7 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import type {User} from 'firebase/auth';
 import {collection,onSnapshot,query,where} from 'firebase/firestore';
-import {ArrowRight,ArrowUpRight,Building2,CalendarDays,ExternalLink,Globe,HeartHandshake,Mail,Phone,Search,X} from 'lucide-react';
+import {ArrowRight,Building2,CalendarDays,ExternalLink,Globe,HeartHandshake,Mail,Phone,Search,X} from 'lucide-react';
 import {db} from '../firebase';
 import type {FundingOpportunity} from './funding';
 import {confirmedFunderContacts} from './confirmed-funding';

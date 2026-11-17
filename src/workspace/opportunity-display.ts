@@ -5,7 +5,12 @@ export type FundingState='open'|'closed'|'enquire';
 export function fundingState(op:FundingOpportunity,now=Date.now()):FundingState{
  if(op.deadline){
   const end=Date.parse(op.deadline+'T23:59:59+02:00');
-  if(Number.isFinite(end))return end>=now?'open':'closed';
+  if(Number.isFinite(end)){
+   if(end<now)return 'closed';
+   // Admins can publish contact-only or unverified leads, but their dates must
+   // not be portrayed as confirmed open applications without source verification.
+   return op.verificationStatus==='verified'?'open':'enquire';
+  }
  }
  // Rolling only when explicitly established by the current official funder notice.
  if(/^rolling applications\b/i.test(op.round||'') && op.verificationStatus==='verified')return 'open';

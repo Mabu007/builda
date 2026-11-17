@@ -365,3 +365,14 @@
  .fu-simple-directory td:before{width:82px;min-width:82px}
  .fu-directory-contacts.compact{gap:8px}
 }
+
+
+/* Funding directory pagination: compact, usable on phone and desktop. */
+.fu-pagination{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:18px 0 30px;padding:12px 0;border-top:1px solid rgba(74,105,86,.15)}
+.fu-pagination-summary,.fu-pagination-pages{font-size:12px;font-weight:700;color:#65816c}
+.fu-pagination-controls{display:flex;align-items:center;gap:12px}
+.fu-pagination-controls button{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 13px;border:1px solid rgba(74,105,86,.25);border-radius:12px;background:transparent;color:inherit;cursor:pointer;font-size:12px;font-weight:750}
+.fu-pagination-controls button:hover:not(:disabled){border-color:#2f8f55;background:rgba(47,143,85,.06)}
+.fu-pagination-controls button:focus-visible{outline:2px solid #2f8f55;outline-offset:3px}
+.fu-pagination-controls button:disabled{cursor:not-allowed;opacity:.4}
+@media(max-width:560px){.fu-pagination{align-items:stretch;flex-direction:column}.fu-pagination-controls{justify-content:space-between}.fu-pagination-controls button{padding:9px 10px}}

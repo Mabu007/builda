@@ -239,6 +239,11 @@ export default async function handler(req,res) {
       warning:authError||(!authData?'Firebase service account not configured. Showing organisation records only; Authentication-only users and last login dates are unavailable.':'')});
    }
    if(action==='opportunities')return res.status(200).json(await all(token,'opportunities',1000));
+    if(action==='funders')return res.status(200).json(await all(token,'funders',1000));
+    if(action==='research-preview'){
+     const preview=researchSummary(),existing=await all(token,'opportunities',1000);
+     return res.status(200).json({...preview,imported:existing.items.filter(x=>x.source===RESEARCH_SOURCE).length});
+    }
    if(action==='candidates')return res.status(200).json(await all(token,'discoveryCandidates',400));
    if(action==='jobs')return res.status(200).json(await all(token,'discoveryJobs',200));
    if(action==='job')return res.status(200).json({job:await firestore.get(token,jobPath(requireId(req.query.id)))});
@@ -246,6 +251,8 @@ export default async function handler(req,res) {
   }
   if(req.method==='POST'){
    if(action==='create')return res.status(201).json(await insertOpportunity(token,body,{actor:admin.uid}));
+    if(action==='funder-save')return res.status(200).json(await saveFunder(token,body,admin.uid));
+    if(action==='research-import')return res.status(200).json(await importResearchBatch(token,body,admin.uid));
    if(action==='update')return res.status(200).json(await saveOpportunity(token,body,admin.uid));
    if(action==='delete')return res.status(200).json(await removeOpportunity(token,body.id));
    if(action==='start')return res.status(201).json(await startDiscovery(token,body,admin.uid));

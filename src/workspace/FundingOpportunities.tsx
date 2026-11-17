@@ -7,12 +7,15 @@ import {matchOpportunity,opportunityExpired,profileProgress,type FundingOpportun
 import {confirmedCall} from './confirmed-funding';
 import {NPO_FUNDING_CATEGORIES,fundingCategory} from './funding-categories';
 import {applicationRoute,applicationSteps,daysToDeadline,displayFundingDate,fundingState,fundingStatusText,importantCondition,plainSummary,whoCanApply} from './opportunity-display';
+import DirectoryPagination,{clampPage} from './DirectoryPagination';
 import './funding-ui.css';
 type Props={user:User;profile:Record<string,string>;files:{name:string;category:string}[];onPrepare:(op:FundingOpportunity)=>void;onApplications:()=>void;onProfile:()=>void;onFunder:(name:string)=>void;openOpportunityId?:string;onOpenHandled?:()=>void};
 export default function FundingOpportunities({user,profile,files,onPrepare,onApplications,onProfile,onFunder,openOpportunityId,onOpenHandled}:Props){
  const [all,setAll]=useState<FundingOpportunity[]>([]),[saved,setSaved]=useState<string[]>([]),[applications,setApplications]=useState<string[]>([]);
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[selected,setSelected]=useState<FundingOpportunity|null>(null);
  const [search,setSearch]=useState(''),[sector,setSector]=useState(''),[working,setWorking]=useState('');
+ const pageSize=12;
+ const [page,setPage]=useState(1);
  useEffect(()=>{
   if(!db){setError('Firestore is not configured.');setLoading(false);return;}
   const u=onSnapshot(query(collection(db,'opportunities'),where('published','==',true)),snap=>{
@@ -43,7 +46,10 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
    return closedDiff || (readiness.personalised?b.match.score-a.match.score:0) ||
     (a.op.deadline||'9999').localeCompare(b.op.deadline||'9999') || a.op.title.localeCompare(b.op.title);
   }),[all,profile,files,readiness.personalised]);
- const visible=matched.filter(row=>(!sector||fundingCategory(row.op)===sector)&&(!search||[row.op.title,row.op.funder,row.op.sector,row.op.description,row.op.contactEmail||'',row.op.contactPhone||''].join(' ').toLowerCase().includes(search.trim().toLowerCase())));
+ const visible=useMemo(()=>matched.filter(row=>(!sector||fundingCategory(row.op)===sector)&&(!search||[row.op.title,row.op.funder,row.op.sector,row.op.description,row.op.contactEmail||'',row.op.contactPhone||''].join(' ').toLowerCase().includes(search.trim().toLowerCase()))),[matched,sector,search]);
+ const currentPage=clampPage(page,visible.length,pageSize);
+ const pageItems=useMemo(()=>visible.slice((currentPage-1)*pageSize,currentPage*pageSize),[visible,currentPage]);
+ useEffect(()=>setPage(1),[search,sector]);
  const save=async(op:FundingOpportunity)=>{
   if(!db||working)return;setWorking(op.id);
   try{
@@ -90,7 +96,7 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
    <div className="fu-toolbar"><label className="fu-search"><Search size={18}/><input aria-label="Search funding opportunities" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search funding, funders or programmes…"/></label>
     <select aria-label="Funding sector" value={sector} onChange={e=>setSector(e.target.value)}><option value="">All 11 focus areas</option>{sectors.map(x=><option key={x}>{x}</option>)}</select></div>
    {loading?<div className="bo-skeleton-wrap">{[1,2,3].map(i=><div className="bo-skeleton" key={i}/>)}</div>:
-    visible.length?<div className="fu-opportunity-grid">{visible.map(({op})=><article className="fu-opportunity-card" key={op.id}>
+    visible.length?<><div className="fu-opportunity-grid">{pageItems.map(({op})=><article className="fu-opportunity-card" key={op.id}>
      <div className="fu-card-overline"><span><HeartHandshake size={15}/> {fundingCategory(op)}</span><span className={'fu-card-state fu-state-'+fundingState(op)}>{fundingStatusText(op)}</span></div>
      <h3>{op.title}</h3><p className="fu-funder">{op.funder}</p>
      <p className="fu-desc">{plainSummary(op)}</p>
@@ -98,7 +104,7 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
      
      <div className="fu-meta"><span><CalendarDays size={14}/>{op.deadline?displayFundingDate(op.deadline):'No deadline listed'}</span><span>{op.amount||'Amount not specified'}</span></div>
      <div className="fu-card-actions"><button className="bo-outline" onClick={()=>void save(op)} disabled={working===op.id}><Bookmark size={16} fill={saved.includes(op.id)?'currentColor':'none'}/>{saved.includes(op.id)?'Saved':'Save'}</button><button className="bo-primary" onClick={()=>setSelected(op)}>View details <ArrowRight size={16}/></button></div>
-    </article>)}</div>:<section className="fu-empty"><span className="fu-empty-symbol"><HeartHandshake size={28}/></span>
+    </article>)}</div><DirectoryPagination page={currentPage} pageSize={pageSize} total={visible.length} label="opportunities" onPage={setPage}/></>:<section className="fu-empty"><span className="fu-empty-symbol"><HeartHandshake size={28}/></span>
      <h2>{all.length?'No opportunities match these filters.':'Funding sources are being added.'}</h2>
      <p>{all.length?'Try clearing the search or selecting all focus areas. Every published call remains accessible.':'The administration team is discovering and reviewing funding calls. Published records will appear here automatically.'}</p>
     </section>}

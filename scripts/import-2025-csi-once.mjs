@@ -10,6 +10,7 @@ if(process.env.VERCEL_ENV!=='production'){
  console.log('[CSI migration] Skipped: not a Vercel production deployment.');
 }else{
  if(!serviceConfigured())throw new Error('[CSI migration] Firebase service credentials missing; import not attempted.');
+ if(process.env.FIREBASE_PROJECT_ID!=='builda-51678'||process.env.VITE_FIREBASE_PROJECT_ID!=='builda-51678')throw new Error('[CSI migration] Unexpected Firebase target project; refusing to import.');
  const summary=csiResearchSummary();
  if(summary.companies!==120||summary.publishedSpend!==112||summary.notDisclosed!==5||
  summary.notAvailable!==3||summary.notes!==26)throw new Error('[CSI migration] Input dataset failed integrity checks.');
@@ -45,5 +46,10 @@ if(process.env.VERCEL_ENV!=='production'){
   throw new Error('[CSI migration] Some funders failed to import; rerun is safe and idempotent.');
  }
  if(created+enriched+skipped!==120)throw new Error('[CSI migration] Row count verification failed.');
+ for(const name of ['Absa Group Limited','Harmony Gold Mining Company','Woolworths']){
+  const record=await firestore.get(token,'funders/'+corporateFunderId(name));
+  if(record?.csiResearch?.importVersion!==CSI_IMPORT_VERSION)throw new Error('[CSI migration] Verification failed for '+name);
+ }
+ console.log('[CSI migration] Verified imported research in production Firestore for three sampled companies.');
  console.log('[CSI migration] Successfully imported 120 historical corporate funders to production Firestore.');
 }

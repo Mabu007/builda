@@ -306,3 +306,62 @@
 .bo-theme-dark .fu-csi-figures strong,.bo-theme-dark .fu-csi-history-heading{color:#c6e5ce}
 .bo-theme-dark .fu-csi-history p{color:#a8bfad}
 @media(max-width:480px){.fu-csi-figures{grid-template-columns:1fr}.fu-csi-history{padding:15px}}
+
+
+/* Focused funders directory: useful contact and opportunity data only. */
+.fu-directory-toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:22px 0 18px}
+.fu-directory-toolbar .fu-search{max-width:700px;flex:1}
+.fu-directory-toolbar>span{font-size:12px;font-weight:800;color:#6d8b72;white-space:nowrap}
+.fu-simple-directory{border:1px solid #e1eae1;border-radius:17px;overflow:hidden;background:#fff;box-shadow:0 10px 36px #244e300a}
+.fu-simple-directory table{width:100%;border-collapse:collapse;text-align:left}
+.fu-simple-directory th{background:#f5f9f5;padding:17px 20px;font-size:10px;color:#78947e;letter-spacing:.065em;font-weight:800}
+.fu-simple-directory td{padding:19px 20px;border-top:1px solid #ebf1e9;vertical-align:middle}
+.fu-simple-directory td:first-child{width:23%}.fu-simple-directory td:nth-child(2){width:30%}.fu-simple-directory td:nth-child(3){width:20%}
+.fu-directory-name{display:flex;align-items:center;justify-content:space-between;gap:9px;width:100%;border:0;background:transparent;padding:0;text-align:left;color:#2d593b}
+.fu-directory-name strong{font-size:12px;line-height:1.55}
+.fu-directory-name svg{flex:none;opacity:.65}
+.fu-directory-name:hover,.fu-directory-opps:hover{color:#21834e;text-decoration:underline}
+.fu-directory-focus{display:block;font-size:11px;line-height:1.65;color:#61806a}
+.fu-directory-muted,.fu-directory-no-contact{font-size:11px;color:#9daea2}
+.fu-directory-opps{display:flex;align-items:center;gap:8px;border:0;background:transparent;padding:0;font-size:11px;font-weight:800;color:#367e4a}
+.fu-directory-contacts{display:flex;align-items:flex-start;flex-direction:column;gap:9px}
+.fu-directory-contacts a{display:inline-flex;align-items:center;gap:8px;max-width:100%;overflow-wrap:anywhere;color:#477d59;text-decoration:none;font-size:11px;font-weight:700;line-height:1.6}
+.fu-directory-contacts a:hover{text-decoration:underline;color:#22613c}
+.fu-directory-contacts a svg{flex:none}
+.fu-directory-contacts.compact{flex-direction:row;flex-wrap:wrap;gap:8px 14px}
+.fu-funder-sheet{width:min(690px,calc(100vw - 24px));max-height:min(90dvh,800px);overflow:hidden;background:white;border:1px solid #dce8dd;border-radius:18px;box-shadow:0 35px 80px #1a392540;display:flex;flex-direction:column}
+.fu-funder-sheet-head{padding:26px 29px 23px;border-bottom:1px solid #e6eee6;display:flex;justify-content:space-between;gap:20px;align-items:flex-start;background:linear-gradient(140deg,#fcfefb,#f2f8f2)}
+.fu-funder-sheet-head h2{font:850 clamp(21px,3vw,27px)/1.28 Manrope,'DM Sans',sans-serif;letter-spacing:-.04em;margin:8px 0 0;color:#315840}
+.fu-funder-sheet-head button{flex:none;border:1px solid #dfe9e0;background:#fff;border-radius:10px;width:35px;height:35px;display:grid;place-items:center;color:#62846c}
+.fu-funder-sheet-body{overflow-y:auto;padding:25px 30px 32px}
+.fu-funder-sheet-body section+section{border-top:1px solid #e8eee6;padding-top:24px;margin-top:24px}
+.fu-funder-sheet-body h3{font:800 14px Manrope,'DM Sans',sans-serif;margin:0 0 15px;color:#345b42}
+.fu-funder-sheet-body p{font-size:12px;color:#6f8775;line-height:1.75;margin:10px 0 0}
+.fu-funder-sheet-tags{display:flex;flex-wrap:wrap;gap:8px}
+.fu-funder-sheet-tags span{font-size:11px;background:#edf6ee;color:#4b7958;border:1px solid #d7e9dc;border-radius:8px;padding:8px 11px;font-weight:750}
+.fu-funder-sheet .fu-directory-contacts{flex-direction:row;flex-wrap:wrap;gap:13px 22px}
+.fu-funder-sheet .fu-directory-contacts a{font-size:12px}
+.bo-theme-dark .fu-simple-directory,.bo-theme-dark .fu-funder-sheet{background:#203632;border-color:#385244}
+.bo-theme-dark .fu-simple-directory th,.bo-theme-dark .fu-funder-sheet-head{background:#284037;border-color:#3b5648}
+.bo-theme-dark .fu-simple-directory td,.bo-theme-dark .fu-funder-sheet-body section+section{border-color:#385045}
+.bo-theme-dark .fu-directory-name,.bo-theme-dark .fu-funder-sheet-head h2,.bo-theme-dark .fu-funder-sheet-body h3{color:#c9e8d2}
+.bo-theme-dark .fu-directory-focus,.bo-theme-dark .fu-funder-sheet-body p{color:#a6bfad}
+.bo-theme-dark .fu-funder-sheet-tags span{background:#355445;color:#d0e8d5;border-color:#4a6954}
+@media(max-width:800px){
+ .fu-simple-directory{overflow:visible;border:0;background:transparent;box-shadow:none}
+ .fu-simple-directory table,.fu-simple-directory tbody{display:block;width:100%}.fu-simple-directory thead{display:none}
+ .fu-simple-directory tr{display:block;background:#fff;border:1px solid #e0ebe1;border-radius:13px;margin-bottom:12px;padding:13px 18px;box-shadow:0 7px 19px #24503309}
+ .fu-simple-directory td{display:flex;align-items:flex-start;gap:13px;width:100%!important;padding:11px 0;border:0!important}
+ .fu-simple-directory td+td{border-top:1px solid #edf2ed!important}
+ .fu-simple-directory td:before{content:attr(data-label);font-size:9px;font-weight:800;color:#8ba190;width:95px;min-width:95px;margin-top:3px}
+ .fu-simple-directory td:first-child:before{display:none}
+ .fu-simple-directory td:first-child{padding:3px 0 13px}
+ .fu-simple-directory td:first-child .fu-directory-name{font-size:14px}
+ .bo-theme-dark .fu-simple-directory tr{background:#203632;border-color:#3c5648}
+}
+@media(max-width:530px){
+ .fu-directory-toolbar{flex-direction:column;align-items:stretch}.fu-directory-toolbar>span{align-self:flex-end}
+ .fu-funder-sheet{max-height:95dvh;border-radius:15px}.fu-funder-sheet-head{padding:20px}.fu-funder-sheet-body{padding:21px}
+ .fu-simple-directory td:before{width:82px;min-width:82px}
+ .fu-directory-contacts.compact{gap:8px}
+}

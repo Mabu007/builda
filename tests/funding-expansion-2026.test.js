@@ -72,11 +72,13 @@ test('pagination is reusable, filter-safe and ranked strictly by actually open c
  assert.match(shared,/clampPage/);
  assert.match(shared,/Showing \{start\}–\{end\}/);
  assert.match(shared,/Previous/);
- assert.match(funders,/fundingState\(op\)!=='open'/);
- assert.match(funders,/linked\.get\(b\.name/);
- assert.match(funders,/pageItems\.map\(f=>/);
- assert.match(opportunities,/pageItems\.map\(\(\{op\}\)=>/);
- assert.match(opportunities,/useEffect\(\(\)=>setPage\(1\),\[search,sector\]\)/);
+ assert.match(funders,/directoryRequest<DirectoryPage<PublicFunder>>/);
+ assert.match(funders,/funders\.map\(f=>/);
+ assert.match(opportunities,/kind=opportunities/);
+ assert.match(opportunities,/rows\.map\(op=>/);
+ assert.match(opportunities,/useEffect\(\(\)=>setPage\(1\),\[sector\]\)/);
+ assert.doesNotMatch(funders,/onSnapshot/);
+ assert.doesNotMatch(opportunities,/collection\(db,'opportunities'/);
 });
 
 test('production importer is project-guarded, non-destructive and checks readbacks',()=>{

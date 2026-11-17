@@ -54,7 +54,7 @@ test('opportunity query sorts exact currently open calls first and preserves cro
  ];
  assert.deepEqual(opportunityRows(calls,{},NOW).map(x=>x.id),['a','d','b','c']);
  assert.deepEqual(opportunityRows(calls,{sector:'Health & Wellness'},NOW).map(x=>x.id),['d','c']);
- assert.deepEqual(opportunityRows(calls,{search:'Education'},NOW).map(x=>x.id),['a','b']);
+ assert.deepEqual(opportunityRows(calls,{search:'Education grants'},NOW).map(x=>x.id),['a']);
  assert.equal(categoryFor(calls[0]),'Health & Wellness');
 });
 

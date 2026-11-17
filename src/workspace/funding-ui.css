@@ -272,3 +272,21 @@
 .bo-theme-dark .fu-how-apply li p{color:#b5c9b9}
 .bo-theme-dark .fu-funder-focus span,.bo-theme-dark .fu-how-apply li>span{background:#365648;color:#c7e5cb}
 .bo-theme-dark .fu-funder-opportunity{background:#203735;border-color:#46624d}
+
+/* Phone-sized directory: one readable funder card per row instead of a horizontal spreadsheet. */
+@media(max-width:650px){
+ .fu-funder-table-wrap{background:transparent;border:0;box-shadow:none;overflow:visible}
+ .fu-funder-table{display:block;min-width:0}
+ .fu-funder-table thead{display:none}
+ .fu-funder-table tbody{display:grid;gap:12px}
+ .fu-funder-table tbody>tr:not(.fu-funder-expanded){display:grid;grid-template-columns:1fr;gap:0;border:1px solid #dfeae0;border-radius:13px;padding:16px;background:#fff;box-shadow:0 7px 20px #20432c08}
+ .fu-funder-table tbody>tr:not(.fu-funder-expanded)>td{display:block;width:100%;padding:10px 0;border:0}
+ .fu-funder-table tbody>tr:not(.fu-funder-expanded)>td:first-child{padding-top:0}
+ .fu-funder-table tbody>tr:not(.fu-funder-expanded)>td:nth-child(3),
+ .fu-funder-table tbody>tr:not(.fu-funder-expanded)>td:nth-child(4){border-top:1px solid #edf1eb}
+ .fu-funder-contact{flex-direction:row;flex-wrap:wrap;gap:16px}
+ .fu-funder-expanded{display:block}
+ .fu-funder-expanded>td{display:block!important;width:100%!important;padding:14px!important}
+ .fu-funder-focus{margin:3px 0 8px}
+ .bo-theme-dark .fu-funder-table tbody>tr:not(.fu-funder-expanded){background:#203735;border-color:#365248}
+}

@@ -125,6 +125,39 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   }catch(e){setError(e instanceof Error?e.message:'Action failed.');}
   finally{setBusy(false);}
  };
+ const importResearch=async()=>{
+  if(seedBusy)return;
+  setSeedBusy(true);setError('');setNotice('');
+  let processed=0,created=0,skipped=0,errors:string[]=[];
+  const total=researchPreview?.leads||50;
+  try{
+   for(let offset=0;offset<total;offset+=5){
+    const result=await adminApi<{nextOffset:number;imported:number;skipped:number;errors:{leadId:string;message:string}[]}>(user,'research-import',{offset,limit:5});
+    processed=result.nextOffset;created+=result.imported;skipped+=result.skipped;
+    errors=[...errors,...result.errors.map(e=>'Lead '+e.leadId+': '+e.message)];
+    setImportProgress({processed,total,created,skipped,errors});
+   }
+   if(errors.length)setError(errors.length+' research leads need attention. Retrying is safe; existing records are not overwritten.');
+   else setNotice('Research import complete: '+created+' added, '+skipped+' already present. Funders and opportunities are ready.');
+   await fetchSection('funders');
+  }catch(e){setError('Import interrupted. You can retry safely. '+(e instanceof Error?e.message:''));}
+  finally{setSeedBusy(false);}
+ };
+ const saveFunderDetails=async()=>{
+  if(!funderEditor||busy)return;
+  setBusy(true);setError('');
+  try{
+   await adminApi(user,'funder-save',funderEditor);
+   setFunderEditor(null);setNotice('Funder details saved.');
+   await fetchSection('funders');
+  }catch(e){setError(e instanceof Error?e.message:'Unable to save funder details.');}
+  finally{setBusy(false);}
+ };
+ useEffect(()=>{
+  if(access==='allowed'&&section==='funders'&&researchPreview&&researchPreview.imported<researchPreview.leads&&!autoSeedStarted.current){
+   autoSeedStarted.current=true;void importResearch();
+  }
+ },[access,section,researchPreview?.imported]);
  const submitEditor=async(e:React.FormEvent)=>{
   e.preventDefault();if(!editor)return;
   const input=toRecord(editor);
@@ -174,13 +207,16 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   return()=>window.clearInterval(interval);
  },[access,jobActive]);
  useEffect(()=>{
-  if(!editor&&!selectedUser)return;
+  if(!editor&&!selectedUser&&!funderEditor)return;
   const previous=document.body.style.overflow;document.body.style.overflow='hidden';
-  const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape'&&!busy){setEditor(null);setCandidateEdit(null);setSelectedUser(null);}};
+  const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape'&&!busy){setEditor(null);setCandidateEdit(null);setSelectedUser(null);setFunderEditor(null);}};
   window.addEventListener('keydown',onKey);
   return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',onKey);};
- },[Boolean(editor),Boolean(selectedUser),busy]);
+ },[Boolean(editor),Boolean(selectedUser),Boolean(funderEditor),busy]);
  const recent=(jobs||[]).find(job=>job.id===jobActive);
+ const npos=users.filter(record=>Boolean(record.organisation&&(record.organisation.name||record.organisation.organizationType==='npo')));
+ const filteredNpos=npos.filter(record=>[record.email,record.uid,record.organisation?.name,record.organisation?.category,record.organisation?.province].some(value=>String(value||'').toLowerCase().includes(userSearch.trim().toLowerCase())));
+ const filteredFunders=funders.filter(record=>[record.name,record.description,record.geography,...(record.sectors||[]),...(record.fundingTypes||[])].some(value=>String(value||'').toLowerCase().includes(funderSearch.trim().toLowerCase()))).sort((a,b)=>a.name.localeCompare(b.name));
  const filteredUsers=users.filter(record=>[record.email,record.uid,record.organisation?.name,record.organisation?.category,record.organisation?.province]
    .some(value=>String(value||'').toLowerCase().includes(userSearch.trim().toLowerCase())));
  const reviewableCandidates=candidates.filter(candidate=>candidate.status!=='discarded');

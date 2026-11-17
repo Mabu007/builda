@@ -18,7 +18,19 @@ export function publicFunder(record={}){
   geography:String(record.geography||'').slice(0,240),
   website,
   contactEmail:String(record.contactEmail||'').slice(0,254),
-  contactPhone:String(record.contactPhone||'').slice(0,100)
+  contactPhone:String(record.contactPhone||'').slice(0,100),
+  historicalCsi:record.csiResearch?.sourceEdition===2025?{
+   reported2024_25Rm:typeof record.csiResearch.reported2024_25Rm==='number'?record.csiResearch.reported2024_25Rm:null,
+   reported2024_25Label:String(record.csiResearch.reported2024_25Label||'Not available'),
+   reported2023_24Rm:typeof record.csiResearch.reported2023_24Rm==='number'?record.csiResearch.reported2023_24Rm:null,
+   reported2023_24Label:String(record.csiResearch.reported2023_24Label||'Not available'),
+   focus:String(record.csiResearch.reportedDevelopmentFocus||'').slice(0,1500),
+   report:String(record.csiResearch.sourceReport||'').slice(0,380),
+   handbookPage:Number(record.csiResearch.page||0),
+   qualification:String(record.csiResearch.qualification||'').slice(0,750),
+   reportPeriod:'2024/25 handbook comparison',
+   researchStatus:'Historical CSI spending, not a current funding call'
+  }:undefined
  };
 }
 export default async function handler(req,res){

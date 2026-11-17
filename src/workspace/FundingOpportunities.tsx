@@ -42,8 +42,11 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
  const sectors=NPO_FUNDING_CATEGORIES;
  const matched=useMemo(()=>all.filter(op=>op.status==='published').map(op=>({op,match:matchOpportunity(op,profile,files)}))
   .sort((a,b)=>{
-   const closedDiff=Number(opportunityExpired(a.op))-Number(opportunityExpired(b.op));
-   return closedDiff || (readiness.personalised?b.match.score-a.match.score:0) ||
+   // Verified active application windows take precedence over undated or
+   // unverified enquiries; expired records always appear last.
+   const ranks={open:0,enquire:1,closed:2};
+   const stateDiff=ranks[fundingState(a.op)]-ranks[fundingState(b.op)];
+   return stateDiff || (readiness.personalised?b.match.score-a.match.score:0) ||
     (a.op.deadline||'9999').localeCompare(b.op.deadline||'9999') || a.op.title.localeCompare(b.op.title);
   }),[all,profile,files,readiness.personalised]);
  const visible=useMemo(()=>matched.filter(row=>(!sector||fundingCategory(row.op)===sector)&&(!search||[row.op.title,row.op.funder,row.op.sector,row.op.description,row.op.contactEmail||'',row.op.contactPhone||''].join(' ').toLowerCase().includes(search.trim().toLowerCase()))),[matched,sector,search]);

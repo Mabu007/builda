@@ -47,14 +47,16 @@ test('existing funder contact details and editorial descriptions are not overwri
  assert.equal(updated.csiResearch.sourceEdition,2025);
 });
 
-test('public funder view contains historical citations but excludes private notes',()=>{
+test('public funder view removes historic spend and confidential admin research without destroying stored source metadata',()=>{
  const record=csiFunderFields(CSI_COMPANIES.find(x=>x.name==='Woolworths'),null);
  record.notes='Do not share';record.updatedBy='admin';
  const projected=publicFunder(record);
- assert.match(projected.historicalCsi.report,/Woolworths Good Business Journey/);
- assert.match(projected.historicalCsi.researchStatus,/Historical CSI/);
+ assert.ok(record.csiResearch.sourceReport.includes('Woolworths'));
+ assert.equal('historicalCsi' in projected,false);
+ assert.equal('csiResearch' in projected,false);
  assert.equal('notes' in projected,false);
  assert.equal('updatedBy' in projected,false);
+ assert.ok(projected.focus.includes('Education'));
 });
 
 test('one-time import only runs in Vercel production after successful build',()=>{

@@ -9,13 +9,13 @@ import {
   LogOut, Menu, Moon, Plus, Settings2, ShieldCheck, Sun, X
 } from 'lucide-react';
 import { auth, db } from '../firebase';
-import DocumentVault from './DocumentVault';
+const DocumentVault = React.lazy(() => import('./DocumentVault'));
 import type { VaultFile } from './DocumentVault';
-import FundingOpportunities from './FundingOpportunities';
-import Funders from './Funders';
-import FundingApplications from './FundingApplications';
-import FundingCreator from './FundingCreator';
-import FundingBriefing from './FundingBriefing';
+const FundingOpportunities = React.lazy(() => import('./FundingOpportunities'));
+const Funders = React.lazy(() => import('./Funders'));
+const FundingApplications = React.lazy(() => import('./FundingApplications'));
+const FundingCreator = React.lazy(() => import('./FundingCreator'));
+const FundingBriefing = React.lazy(() => import('./FundingBriefing'));
 import { FUNDING_PROFILE_FIELDS, profileProgress, type FundingOpportunity } from './funding';
 import './workspace.css';
 
@@ -218,6 +218,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
       <div className="bo-topbar"><div className="bo-top-left"><button className="bo-mobile-menu" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}><Menu size={21}/></button><span className="bo-breadcrumb">Your workspace</span><ChevronRight size={14}/><strong>{nav.flatMap(group => group.items).find(item => item.id === view)?.label || 'Home'}</strong></div><div className="bo-top-right"><button className="bo-theme-button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>{theme === 'dark' ? <Sun size={18}/> : <Moon size={18}/>}</button><span className="bo-avatar" title={user.email || ''}>{organisationName.charAt(0).toUpperCase()}</span></div></div>
       <div className="bo-content">
         {notice && <div className="bo-toast" role="status"><CheckCircle2 size={17}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={15}/></button></div>}
+        <React.Suspense fallback={<div className="bo-skeleton-wrap" role="status" aria-live="polite"><div className="bo-skeleton"/><div className="bo-skeleton"/></div>}>
         {view === 'overview' && <>
           <Heading eyebrow="YOUR FUNDRAISING DESK" title={greeting() + ', ' + displayName} subtitle="Your funding. Your documents. Your future." action={<button className="bo-primary" onClick={() => changeView('opportunities')}><HeartHandshake size={16}/> Explore funding <ArrowUpRight size={16}/></button>}/>
           {profileError && <div className="bo-inline-error" role="alert">{profileError} <button onClick={() => window.location.reload()}>Retry</button></div>}
@@ -239,7 +240,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
               <div className="bo-npo-brief-body"><span className="bo-npo-brief-spark"><HeartHandshake size={27}/></span><h3>Start exploring funding today</h3><p>Browse published calls now. Fill in just 3 profile details to see opportunities ranked for your organisation.</p><button className="bo-primary" onClick={() => changeView('opportunities')}>Browse opportunities <ArrowRight size={16}/></button></div>
             </section>
           </div>
-          <FundingBriefing profile={profile} files={files} onOpen={() => changeView('opportunities')}/>
+          <FundingBriefing user={user} profile={profile} files={files} onOpen={() => changeView('opportunities')}/>
           <div className="bo-npo-four-pillar"><div className="bo-small-kicker">YOUR FUNDRAISING WORKSPACE</div><div className="bo-npo-pillar-grid">
             <button onClick={() => changeView('documents')}><FolderOpen size={19}/><strong>Document vault</strong><span>Organise and track records</span><ArrowRight size={15}/></button>
             <button onClick={() => changeView('opportunities')}><HeartHandshake size={19}/><strong>Funding opportunities</strong><span>Grants and CSI intelligence</span><ArrowRight size={15}/></button>
@@ -316,6 +317,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
             <section className="bo-panel bo-setting-card"><div className="bo-setting-icon"><LockKeyhole size={21}/></div><div><div className="bo-small-kicker">ACCOUNT PRIVACY</div><h3>Protected organisation workspace</h3><p>Signed in as <strong>{user.email}</strong>. Your organisation profile, uploaded documents and proposal drafts are scoped to your signed-in account.</p></div></section>
           </div>
         </>}
+        </React.Suspense>
         <div className="bo-footer"><span>OPPOTRON · YOUR FUNDING. YOUR DOCUMENTS. YOUR FUTURE.</span><span>South Africa · © {new Date().getFullYear()}</span></div>
       </div>
     </div>

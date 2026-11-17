@@ -924,5 +924,17 @@ export const MAJOR_FUNDERS=[
     "sourceUrl": "https://natureforward.org/crowder-messersmith-fund/",
     "kind": "Verified institution / funder",
     "lastCheckedAt": "2026-11-17"
+  },
+  {
+    "name": "Illegal Wildlife Trade Challenge Fund (UK Defra)",
+    "website": "https://iwt.challengefund.org.uk/",
+    "sectors": [
+      "Environment & Conservation"
+    ],
+    "contactEmail": "BCF-IWTCF@niras.com",
+    "contactPhone": "",
+    "sourceUrl": "https://iwt.challengefund.org.uk/how-to-apply/",
+    "kind": "Verified institution / funder",
+    "lastCheckedAt": "2026-11-17"
   }
 ];

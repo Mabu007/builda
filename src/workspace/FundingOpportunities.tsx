@@ -1,14 +1,13 @@
 import React, {useEffect,useMemo,useState} from 'react';
 import type {User} from 'firebase/auth';
 import {collection,deleteDoc,doc,onSnapshot,query,serverTimestamp,setDoc,where} from 'firebase/firestore';
-import {ArrowRight,ArrowUpRight,Bookmark,CalendarDays,ClipboardCheck,Clock3,ExternalLink,FilePenLine,FileText,HeartHandshake,Info,Mail,MapPin,Phone,Search,Sparkles,Wallet,X} from 'lucide-react';
+import {ArrowRight,ArrowUpRight,Bookmark,CalendarDays,ClipboardCheck,ExternalLink,FilePenLine,FileText,HeartHandshake,Info,Mail,MapPin,Phone,Search,Sparkles,Wallet,X} from 'lucide-react';
 import {db} from '../firebase';
 import {matchOpportunity,opportunityExpired,profileProgress,type FundingOpportunity} from './funding';
 import {confirmedCall} from './confirmed-funding';
 import {applicationRoute,applicationSteps,daysToDeadline,displayFundingDate,fundingState,fundingStatusText,importantCondition,plainSummary,whoCanApply} from './opportunity-display';
 import './funding-ui.css';
 type Props={user:User;profile:Record<string,string>;files:{name:string;category:string}[];onPrepare:(op:FundingOpportunity)=>void;onApplications:()=>void;onProfile:()=>void;onFunder:(name:string)=>void;openOpportunityId?:string;onOpenHandled?:()=>void};
-const displayDate=(x?:string)=>x?new Date(x+'T12:00:00Z').toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'}):'Not specified';
 export default function FundingOpportunities({user,profile,files,onPrepare,onApplications,onProfile,onFunder,openOpportunityId,onOpenHandled}:Props){
  const [all,setAll]=useState<FundingOpportunity[]>([]),[saved,setSaved]=useState<string[]>([]),[applications,setApplications]=useState<string[]>([]);
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[selected,setSelected]=useState<FundingOpportunity|null>(null);
@@ -91,9 +90,9 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
     <select aria-label="Funding sector" value={sector} onChange={e=>setSector(e.target.value)}><option value="">All focus areas</option>{sectors.map(x=><option key={x}>{x}</option>)}</select></div>
    {loading?<div className="bo-skeleton-wrap">{[1,2,3].map(i=><div className="bo-skeleton" key={i}/>)}</div>:
     visible.length?<div className="fu-opportunity-grid">{visible.map(({op})=><article className="fu-opportunity-card" key={op.id}>
-     <div className="fu-card-overline"><span><HeartHandshake size={15}/> {op.sector||'Funding'}</span><span><span className={'fu-card-state fu-state-'+fundingState(op)}>{fundingStatusText(op)}</span></span></div>
+     <div className="fu-card-overline"><span><HeartHandshake size={15}/> {op.sector||'Funding'}</span><span className={'fu-card-state fu-state-'+fundingState(op)}>{fundingStatusText(op)}</span></div>
      <h3>{op.title}</h3><p className="fu-funder">{op.funder}</p>
-     <p className="fu-desc">{op.description||'Description not provided. Contact the funder for more information.'}</p>
+     <p className="fu-desc">{plainSummary(op)}</p>
       
      
      <div className="fu-meta"><span><CalendarDays size={14}/>{op.deadline?displayFundingDate(op.deadline):'No deadline listed'}</span><span>{op.amount||'Amount not specified'}</span></div>
@@ -138,7 +137,7 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
     <div className="fu-modal-actions fu-modal-footer">
      <button className="bo-outline" onClick={()=>{onPrepare(selected);setSelected(null);}}><FilePenLine size={17}/> Prepare documents</button>
      <button className="bo-outline" onClick={()=>void start(selected)} disabled={working===selected.id}><ClipboardCheck size={17}/>{applications.includes(selected.id)?'Open application':'Track application'}</button>
-     {route?<a className="bo-primary" href={route.url} target={route.kind==='website'?'_blank':undefined} rel={route.kind==='website'?'noopener noreferrer':undefined}>{route.label} {route.kind==='email'?<Mail size={17}/>:route.kind==='phone'?<Phone size={17}/>:<ArrowUpRight size={17}/>}</a>:<button className="bo-primary" disabled title="Application details have not been supplied">Application details unavailable</button>}
+     {selectedState==='closed'?(confirmed?.sourceUrl||selected.sourceUrl?<a className="bo-primary" href={confirmed?.sourceUrl||selected.sourceUrl} target="_blank" rel="noopener noreferrer">View closed call <ExternalLink size={17}/></a>:<button className="bo-primary" disabled>Applications closed</button>):route?<a className="bo-primary" href={route.url} target={route.kind==='website'?'_blank':undefined} rel={route.kind==='website'?'noopener noreferrer':undefined}>{route.label} {route.kind==='email'?<Mail size={17}/>:route.kind==='phone'?<Phone size={17}/>:<ArrowUpRight size={17}/>}</a>:<button className="bo-primary" disabled title="Application details have not been supplied">Application details unavailable</button>}
     </div>
    </section>
   </div>}

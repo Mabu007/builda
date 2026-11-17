@@ -31,7 +31,7 @@ test('major funder registry covers all 21 SETAs, verified institution identities
 
 test('additional opportunities are source-backed, unique, dated and explicit about restricted eligibility',()=>{
  assert.equal(FUNDING_EXPANSION_AUDITED_AT,'2026-11-17');
- assert.equal(ADDITIONAL_VERIFIED_CALLS.length,13);
+ assert.equal(ADDITIONAL_VERIFIED_CALLS.length,16);
  const seen=new Set();
  for(const row of ADDITIONAL_VERIFIED_CALLS){
   const key=(row.funder+'|'+row.title).toLowerCase();
@@ -50,7 +50,14 @@ test('additional opportunities are source-backed, unique, dated and explicit abo
  assert.match(west.researchCaveat,/only NPOs who attended/i);
  const rise=ADDITIONAL_VERIFIED_CALLS.find(x=>x.funder==='Rise Up Together');
  assert.match(rise.researchCaveat,/NOT immediate grant/i);
- assert.ok(ADDITIONAL_VERIFIED_CALLS.filter(x=>x.status==='published').length>=10);
+ assert.equal(ADDITIONAL_VERIFIED_CALLS.filter(x=>x.status==='published').length,15);
+ const spur=ADDITIONAL_VERIFIED_CALLS.find(x=>x.funder==='Spur Foundation');
+ assert.match(spur.researchCaveat,/individual ECD centres/);
+ assert.equal(spur.contactEmail,'spurfoundation@spur.co.za');
+ const humanitarian=ADDITIONAL_VERIFIED_CALLS.find(x=>x.funder==='National Lotteries Commission');
+ assert.equal(humanitarian.deadline,'2026-11-28');
+ assert.match(humanitarian.applicationInstructions,/11:00 SAST/);
+ assert.equal(humanitarian.contactEmail,'humanitarianpanel@nlcsa.org.za');
 });
 
 test('pagination is reusable, filter-safe and ranked strictly by actually open calls',()=>{

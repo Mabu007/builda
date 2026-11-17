@@ -3,7 +3,7 @@ import type {User} from 'firebase/auth';
 import {collection,deleteDoc,doc,onSnapshot,query,serverTimestamp,setDoc,where} from 'firebase/firestore';
 import {ArrowRight,ArrowUpRight,Bookmark,CalendarDays,ClipboardCheck,ExternalLink,FilePenLine,FileText,HeartHandshake,Info,Mail,MapPin,Phone,Search,Sparkles,Wallet,X} from 'lucide-react';
 import {db} from '../firebase';
-import {matchOpportunity,opportunityExpired,profileProgress,type FundingOpportunity} from './funding';
+import {matchOpportunity,profileProgress,type FundingOpportunity} from './funding';
 import {confirmedCall} from './confirmed-funding';
 import {NPO_FUNDING_CATEGORIES,fundingCategory} from './funding-categories';
 import {applicationRoute,applicationSteps,daysToDeadline,displayFundingDate,fundingState,fundingStatusText,importantCondition,plainSummary,whoCanApply} from './opportunity-display';

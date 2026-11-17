@@ -3,6 +3,7 @@ import {requireAdmin,errorResponse,firestore} from './_lib/firestore-rest.js';
 import {normalizeOpportunity,identityKey,canonicalKey,isExpired,publicUrl} from './_lib/opportunities.js';
 import {searchFunding,extractFunding,storeFundingPdfs,probeDiscoveryProviders} from './_lib/discovery.js';
 import {listFirebaseUsers,serviceConfigured} from './_lib/service-auth.js';
+import {RESEARCH_ROWS,RESEARCH_SOURCE,RESEARCH_FUNDERS,researchSummary,researchToOpportunity} from './_lib/research-import.js';
 const now=()=>new Date().toISOString();
 const requestCounts=new Map();
 function throttle(uid,action){
@@ -12,14 +13,62 @@ function throttle(uid,action){
  history.push(instant);requestCounts.set(key,history);
  if(requestCounts.size>500)requestCounts.clear();
 }
+const funderId=name=>createHash('sha256').update(String(name||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ')).digest('hex').slice(0,40);
 async function upsertFunder(token,record){
- const id=createHash('sha256').update(record.funder.trim().toLowerCase().replace(/[^a-z0-9]+/g,' ')).digest('hex').slice(0,40);
- const path='funders/'+id,prior=await firestore.get(token,path);
- await firestore.set(token,path,{name:record.funder,slug:id,published:record.published||prior?.published||false,
-  sectors:[...new Set([...(prior?.sectors||[]),record.sector].filter(Boolean))].slice(0,30),
-  updatedAt:now(),createdAt:prior?.createdAt||now()});
+ const name=String(record.funder||'').trim();
+ if(!name||name==='Not specified')return;
+ const id=funderId(name),path='funders/'+id,prior=await firestore.get(token,path);
+ const info=RESEARCH_FUNDERS.find(item=>item.name===name);
+ const unique=(...arrays)=>[...new Set(arrays.flat().filter(Boolean))].slice(0,40);
+ await firestore.set(token,path,{
+  ...(prior||{}),id,name,slug:id,published:Boolean(record.published||prior?.published),
+  sectors:unique(prior?.sectors||[],info?.sectors||[],[record.sector]),
+  fundingTypes:unique(prior?.fundingTypes||[],info?.types||[],[record.researchType]),
+  researchStatuses:unique(prior?.researchStatuses||[],info?.statuses||[],[record.researchStatus]),
+  sourceUrls:unique(prior?.sourceUrls||[],info?.sourceUrls||[],[record.sourceUrl]),
+  geography:prior?.geography||info?.regions?.join('; ')||'',
+  researchLeadCount:info?.leadCount||prior?.researchLeadCount||0,
+  researchLastCheckedAt:info?.lastCheckedAt||prior?.researchLastCheckedAt||'',
+  updatedAt:now(),createdAt:prior?.createdAt||now()
+ });
 }
-
+async function saveFunder(token,input,actor){
+ const name=bounded(input.name,180).trim();
+ if(!name)throw Object.assign(new Error('Funder name is required.'),{status:400});
+ const id=input.id?requireId(input.id):funderId(name);
+ const prior=await firestore.get(token,'funders/'+id);
+ if(prior?.name&&prior.name!==name)throw Object.assign(new Error('Keep the original funder name to preserve links to existing calls.'),{status:400});
+ const website=String(input.website||'').trim();
+ if(website&&!publicUrl(website))throw Object.assign(new Error('Use a public HTTPS website URL.'),{status:400});
+ const contactEmail=bounded(input.contactEmail,254).trim();
+ if(contactEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail))
+  throw Object.assign(new Error('Enter a valid contact email or leave it blank.'),{status:400});
+ const record={...(prior||{}),id,slug:id,name,website:website?publicUrl(website):'',
+  contactEmail,contactPhone:bounded(input.contactPhone,100),
+  description:bounded(input.description,2400),notes:bounded(input.notes,2500),
+  updatedAt:now(),updatedBy:actor,createdAt:prior?.createdAt||now(),
+  published:typeof input.published==='boolean'?input.published:Boolean(prior?.published)};
+ await firestore.set(token,'funders/'+id,record);
+ return record;
+}
+export async function importResearchBatch(token,{offset=0,limit=5}={},actor='admin'){
+ const start=Math.max(0,Math.min(RESEARCH_ROWS.length,Math.trunc(Number(offset)||0)));
+ const count=Math.max(1,Math.min(6,Math.trunc(Number(limit)||5)));
+ const items=RESEARCH_ROWS.slice(start,start+count);
+ let imported=0,skipped=0,errors=[];
+ for(const row of items){
+  const item=researchToOpportunity(row);
+  try{
+   const id=identityKey(normalizeOpportunity(item));
+   if(await firestore.get(token,opportunityPath(id))){skipped++;continue;}
+   try{await insertOpportunity(token,item,{actor});imported++;}
+   catch(error){if(error.status===409)skipped++;else throw error;}
+  }catch(error){errors.push({leadId:row.ID,message:String(error.message||error).slice(0,180)});}
+ }
+ return {offset:start,nextOffset:start+items.length,total:RESEARCH_ROWS.length,
+  imported,skipped,errors,done:start+items.length>=RESEARCH_ROWS.length,
+  note:'Research status is preserved. Only explicitly open, unexpired calls are published; others are private drafts.'};
+}
 const bounded=(v,max=150)=>String(v||'').slice(0,max);
 const jobPath=id=>'discoveryJobs/'+id;
 const opportunityPath=id=>'opportunities/'+id;
@@ -149,8 +198,8 @@ async function importCandidate(token,id,overrides,uid){
  return record;
 }
 async function counts(token){
- const [people,opps,candidates,jobs]=await Promise.all([
-  all(token,'contractors',1000),all(token,'opportunities',1000),all(token,'discoveryCandidates',400),all(token,'discoveryJobs',300)]);
+ const [people,opps,candidates,jobs,funders]=await Promise.all([
+  all(token,'contractors',1000),all(token,'opportunities',1000),all(token,'discoveryCandidates',400),all(token,'discoveryJobs',300),all(token,'funders',1000)]);
  let totalUsers=null,authPartial=false;
  if(serviceConfigured()){
   try{
@@ -160,12 +209,12 @@ async function counts(token){
  }
  return {
   totalUsers,organisations:people.items.length,
-  totalOpportunities:opps.items.length,published:opps.items.filter(o=>o.status==='published').length,
+  totalOpportunities:opps.items.length,totalFunders:funders.items.length,published:opps.items.filter(o=>o.status==='published').length,
   active:opps.items.filter(o=>o.status==='published'&&!isExpired(o)).length,
   pendingReviews:candidates.items.filter(c=>c.status==='review'||c.status==='incomplete').length,
   discoveryJobs:jobs.items.length,discoveryRunning:jobs.items.filter(j=>!['done','failed'].includes(j.status)).length,
   recentlyDiscovered:candidates.items.slice(-30).length,
-  partial:people.hasMore||opps.hasMore||candidates.hasMore||jobs.hasMore||authPartial
+  partial:people.hasMore||opps.hasMore||candidates.hasMore||jobs.hasMore||funders.hasMore||authPartial
  };
 }
 export default async function handler(req,res) {

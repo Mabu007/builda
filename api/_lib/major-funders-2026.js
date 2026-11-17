@@ -11,9 +11,9 @@ export const MAJOR_FUNDERS=[
       "Education & Research",
       "Agriculture"
     ],
-    "contactEmail": "",
-    "contactPhone": "",
-    "sourceUrl": "https://www.agriseta.co.za/",
+    "contactEmail": "info@agriseta.co.za",
+    "contactPhone": "+27 12 301 5600",
+    "sourceUrl": "https://www.agriseta.co.za/contact/",
     "kind": "Verified institution / funder",
     "lastCheckedAt": "2026-11-17"
   },
@@ -24,9 +24,9 @@ export const MAJOR_FUNDERS=[
       "Education & Research",
       "Banking and financial skills"
     ],
-    "contactEmail": "",
-    "contactPhone": "",
-    "sourceUrl": "https://www.bankseta.org.za/",
+    "contactEmail": "info@bankseta.org.za",
+    "contactPhone": "+27 11 805 9661",
+    "sourceUrl": "https://bankseta.org.za/",
     "kind": "Verified institution / funder",
     "lastCheckedAt": "2026-11-17"
   },
@@ -37,9 +37,9 @@ export const MAJOR_FUNDERS=[
       "Education & Research",
       "Arts, Culture & Recreation"
     ],
-    "contactEmail": "",
-    "contactPhone": "",
-    "sourceUrl": "https://www.cathsseta.org.za/",
+    "contactEmail": "info@cathsseta.org.za",
+    "contactPhone": "011 217 0600",
+    "sourceUrl": "https://www.cathsseta.org.za/contact",
     "kind": "Verified institution / funder",
     "lastCheckedAt": "2026-11-17"
   },
@@ -77,8 +77,8 @@ export const MAJOR_FUNDERS=[
       "Teacher and skills training"
     ],
     "contactEmail": "",
-    "contactPhone": "",
-    "sourceUrl": "https://www.etdpseta.org.za/",
+    "contactPhone": "011 372 3300",
+    "sourceUrl": "https://www.etdpseta.org.za/edu/contacts",
     "kind": "Verified institution / funder",
     "lastCheckedAt": "2026-11-17"
   },
@@ -89,9 +89,9 @@ export const MAJOR_FUNDERS=[
       "Education & Research",
       "Energy and water skills"
     ],
-    "contactEmail": "",
-    "contactPhone": "",
-    "sourceUrl": "https://www.ewseta.org.za/",
+    "contactEmail": "info@ewseta.org.za",
+    "contactPhone": "+27 11 274 4700",
+    "sourceUrl": "https://ewseta.org.za/contact-us/",
     "kind": "Verified institution / funder",
     "lastCheckedAt": "2026-11-17"
   },
@@ -272,8 +272,8 @@ export const MAJOR_FUNDERS=[
       "Wholesale and retail training"
     ],
     "contactEmail": "",
-    "contactPhone": "",
-    "sourceUrl": "https://www.wrseta.org.za/",
+    "contactPhone": "012 622 9500",
+    "sourceUrl": "https://www.wrseta.org.za/contact-us",
     "kind": "Verified institution / funder",
     "lastCheckedAt": "2026-11-17"
   },
@@ -638,8 +638,8 @@ export const MAJOR_FUNDERS=[
     "sectors": [
       "Social Services & Welfare"
     ],
-    "contactEmail": "",
-    "contactPhone": "",
+    "contactEmail": "info@hcifoundation.co.za",
+    "contactPhone": "+27 21 424 6010",
     "sourceUrl": "https://www.hcifoundation.co.za/",
     "kind": "Verified institution / funder",
     "lastCheckedAt": "2026-11-17"
@@ -897,6 +897,31 @@ export const MAJOR_FUNDERS=[
     "contactEmail": "",
     "contactPhone": "011 682 0911",
     "sourceUrl": "https://www.randwater.co.za/rwf_announcements.php",
+    "kind": "Verified institution / funder",
+    "lastCheckedAt": "2026-11-17"
+  },
+  {
+    "name": "Spur Foundation",
+    "website": "https://spurfoundation.co.za/",
+    "sectors": [
+      "Education & Research",
+      "Community Development & Housing"
+    ],
+    "contactEmail": "spurfoundation@spur.co.za",
+    "contactPhone": "+27 21 555 5100",
+    "sourceUrl": "https://spurfoundation.co.za/about-us",
+    "kind": "Verified institution / funder",
+    "lastCheckedAt": "2026-11-17"
+  },
+  {
+    "name": "Nature Forward",
+    "website": "https://natureforward.org/",
+    "sectors": [
+      "Environment & Conservation"
+    ],
+    "contactEmail": "",
+    "contactPhone": "",
+    "sourceUrl": "https://natureforward.org/crowder-messersmith-fund/",
     "kind": "Verified institution / funder",
     "lastCheckedAt": "2026-11-17"
   }

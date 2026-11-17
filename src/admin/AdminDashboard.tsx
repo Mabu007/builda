@@ -6,17 +6,22 @@ import {
  CheckCircle2,ChevronRight,ClipboardCheck,Clock3,CloudDownload,Compass,Edit3,
  ExternalLink,FileText,Filter,FolderOpen,HeartHandshake,LayoutDashboard,Link2,
  LockKeyhole,LogOut,Menu,Plus,RefreshCw,Search,Settings2,ShieldCheck,Sparkles,
- Trash2,Users,X
+ Trash2,Users,Building2,Mail,Phone,X
 } from 'lucide-react';
 import {auth} from '../firebase';
-import type {FundingOpportunity} from '../workspace/funding';
+import {FUNDING_PROFILE_FIELDS,type FundingOpportunity} from '../workspace/funding';
 import './admin.css';
-type Section='overview'|'users'|'opportunities'|'discovery';
+type Section='overview'|'users'|'npos'|'funders'|'opportunities'|'discovery';
 type UserRecord={uid:string;email:string;createdAt:string;lastLoginAt:string;disabled:boolean;organisation:Record<string,unknown>|null};
 type Candidate={id:string;jobId:string;sourceUrl:string;title:string;data:Partial<FundingOpportunity>|null;duplicateOf:string;status:string;notice?:string;error?:string;extractedAt:string;importedOpportunityId?:string};
 type Job={id:string;mode:string;query:string;sourceUrl:string;status:string;urls:{url:string}[];cursor:number;provider?:string;fallback?:boolean;providerNotice?:string;errors:{message:string}[];createdAt:string};
 type Summary={totalUsers:number|null;organisations:number;totalOpportunities:number;published:number;active:number;pendingReviews:number;discoveryJobs:number;discoveryRunning:number;partial?:boolean};
 type AdminData={items:FundingOpportunity[];hasMore:boolean};
+type FunderRecord={id?:string;name:string;website?:string;contactEmail?:string;contactPhone?:string;description?:string;notes?:string;published?:boolean;sectors?:string[];fundingTypes?:string[];researchStatuses?:string[];sourceUrls?:string[];researchLeadCount?:number;researchLastCheckedAt?:string;geography?:string};
+type ResearchPreview={leads:number;funders:number;explicitlyOpen:number;uncertain:number;imported:number;checkedAt:string;warning:string};
+type ImportProgress={processed:number;total:number;created:number;skipped:number;errors:string[]};
+const blankFunder:FunderRecord={name:'',website:'',contactEmail:'',contactPhone:'',description:'',notes:'',published:false};
+const npoProgress=(record:UserRecord)=>FUNDING_PROFILE_FIELDS.filter(key=>String(record.organisation?.[key]||'').trim()).length*10;
 type Props={user:User;onExit:()=>void;onWorkspace:()=>void};
 type Editor={
  id:string;title:string;funder:string;description:string;sector:string;eligibility:string;
@@ -33,6 +38,8 @@ const sectors=['Education','Youth development','Healthcare','Community developme
 const sections:{id:Section;label:string;icon:React.ReactNode}[]=[
  {id:'overview',label:'Overview',icon:<LayoutDashboard size={18}/>},
  {id:'users',label:'Users',icon:<Users size={18}/>},
+  {id:'npos',label:'NPOs',icon:<Building2 size={18}/>},
+  {id:'funders',label:'Funders',icon:<HeartHandshake size={18}/>},
  {id:'opportunities',label:'Opportunities',icon:<HeartHandshake size={18}/>},
  {id:'discovery',label:'Discovery Engine',icon:<Compass size={18}/>}
 ];
@@ -64,6 +71,9 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
  const [section,setSection]=useState<Section>('overview'),[navOpen,setNavOpen]=useState(false);
  const [summary,setSummary]=useState<Summary|null>(null),[users,setUsers]=useState<UserRecord[]>([]),[usersWarning,setUsersWarning]=useState('');
  const [opportunities,setOpportunities]=useState<FundingOpportunity[]>([]),[candidates,setCandidates]=useState<Candidate[]>([]),[jobs,setJobs]=useState<Job[]>([]);
+ const [funders,setFunders]=useState<FunderRecord[]>([]),[funderSearch,setFunderSearch]=useState(''),[funderEditor,setFunderEditor]=useState<FunderRecord|null>(null);
+ const [researchPreview,setResearchPreview]=useState<ResearchPreview|null>(null),[seedBusy,setSeedBusy]=useState(false),[importProgress,setImportProgress]=useState<ImportProgress|null>(null);
+ const autoSeedStarted=useRef(false);
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [search,setSearch]=useState(''),[filter,setFilter]=useState('all');
  const [userSearch,setUserSearch]=useState(''),[selectedUser,setSelectedUser]=useState<UserRecord|null>(null),[hasMoreOpportunities,setHasMoreOpportunities]=useState(false);
@@ -86,7 +96,12 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   setLoading(true);setError('');
   try{
    if(next==='overview')setSummary(await adminApi<Summary>(user,'overview'));
-   if(next==='users'){const data=await adminApi<{items:UserRecord[];warning:string}>(user,'users');setUsers(data.items);setUsersWarning(data.warning||'');}
+   if(next==='users'||next==='npos'){const data=await adminApi<{items:UserRecord[];warning:string}>(user,'users');setUsers(data.items||[]);setUsersWarning(data.warning||'');}
+    if(next==='funders'){const [data,preview]=await Promise.all([
+      adminApi<{items:FunderRecord[]}>(user,'funders'),
+      adminApi<ResearchPreview>(user,'research-preview')]);
+      setFunders(data.items||[]);setResearchPreview(preview);
+    }
    if(next==='opportunities'){const data=await adminApi<AdminData>(user,'opportunities');setOpportunities(data.items||[]);setHasMoreOpportunities(Boolean(data.hasMore));}
    if(next==='discovery'){
     const [a,b]=await Promise.all([adminApi<{items:Candidate[]}>(user,'candidates'),adminApi<{items:Job[]}>(user,'jobs')]);

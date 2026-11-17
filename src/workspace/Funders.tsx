@@ -8,7 +8,8 @@ import {confirmedFunderContacts} from './confirmed-funding';
 import {displayFundingDate,fundingState} from './opportunity-display';
 import './funding-ui.css';
 
-export type PublicFunder={id:string;name:string;description:string;focus:string[];support:string[];geography:string;website:string;contactEmail:string;contactPhone:string};
+type HistoricalCsi={reported2024_25Rm:number|null;reported2024_25Label:string;reported2023_24Rm:number|null;reported2023_24Label:string;focus:string;report:string;handbookPage:number;qualification:string;reportPeriod:string;researchStatus:string};
+export type PublicFunder={id:string;name:string;description:string;focus:string[];support:string[];geography:string;website:string;contactEmail:string;contactPhone:string;historicalCsi?:HistoricalCsi};
 type Props={user:User;focusName?:string;onOpportunity:(id:string)=>void};
 export default function Funders({user,focusName='',onOpportunity}:Props){
  const [funders,setFunders]=useState<PublicFunder[]>([]),[opportunities,setOpportunities]=useState<FundingOpportunity[]>([]);
@@ -50,7 +51,7 @@ export default function Funders({user,focusName='',onOpportunity}:Props){
  }),[funders,search]);
  return <section className="fu-funders-page">
   <div className="bo-page-heading"><div><div className="bo-eyebrow"><Building2 size={15}/> FUNDING ORGANISATIONS</div><h1>Funders<span className="bo-heading-dot">.</span></h1><p>Discover organisations that support nonprofits. Explore what they fund, how to reach them and their opportunities.</p></div></div>
-  <div className="fu-funders-intro"><div><strong>{loading?'—':funders.length}</strong><span>funders in the directory</span></div><p>A funder may be listed even when it has no open applications. Explore the organisation first, then choose a funding call that fits your NPO.</p></div>
+  <div className="fu-funders-intro"><div><strong>{loading?'—':funders.length}</strong><span>funders in the directory</span></div><p>Includes historical corporate CSI funders. Explore their focus areas and look for separately listed, currently open funding calls.</p></div>
   {error&&<p className="bo-inline-error" role="alert">{error}<button onClick={()=>window.location.reload()}>Retry</button></p>}
   <label className="fu-search fu-funders-search"><Search size={18}/><input aria-label="Search funders" placeholder="Search funders, focus areas, programmes…" value={search} onChange={e=>setSearch(e.target.value)}/></label>
   {loading?<div className="bo-skeleton-wrap">{[1,2,3].map(i=><div key={i} className="bo-skeleton"/>)}</div>:results.length?
@@ -69,7 +70,13 @@ export default function Funders({user,focusName='',onOpportunity}:Props){
       <td><div className="fu-funder-contact">{email&&<a href={'mailto:'+email}><Mail size={15}/> Email</a>}{f.contactPhone&&<a href={'tel:'+f.contactPhone.replace(/[^\d+]/g,'')}><Phone size={15}/> Call</a>}{website&&<a href={website} target="_blank" rel="noopener noreferrer"><ExternalLink size={15}/> Website</a>}{!email&&!f.contactPhone&&!website&&<span>Not supplied</span>}</div></td>
      </tr>
      {expanded===f.name&&<tr className="fu-funder-expanded"><td colSpan={4}><div className="fu-funder-detail">
-      <div><h3>About {f.name}</h3><p>{f.description||'This organisation has been identified as a potential funding or support provider. Check its website for current priorities.'}</p>{f.support?.length>0&&<p><strong>Support offered:</strong> {f.support.join(' · ')}</p>}{f.geography&&<p><strong>Coverage:</strong> {f.geography}</p>}</div>
+      <div><h3>About {f.name}</h3><p>{f.description||'This organisation has been identified as a potential funding or support provider. Check its website for current priorities.'}</p>
+        {f.historicalCsi&&<div className="fu-csi-history"><div className="fu-csi-history-heading">Historical CSI research · Trialogue 2025</div>
+         <div className="fu-csi-figures"><div><small>Reported 2024/25 CSI</small><strong>{f.historicalCsi.reported2024_25Rm!==null?'R'+f.historicalCsi.reported2024_25Rm.toLocaleString('en-ZA')+' million':f.historicalCsi.reported2024_25Label}</strong></div><div><small>2023/24 comparison</small><strong>{f.historicalCsi.reported2023_24Rm!==null?'R'+f.historicalCsi.reported2023_24Rm.toLocaleString('en-ZA')+' million':f.historicalCsi.reported2023_24Label}</strong></div></div>
+         <p><strong>Original source:</strong> {f.historicalCsi.report} (handbook p. {f.historicalCsi.handbookPage}).</p>
+         {f.historicalCsi.qualification&&<p><strong>Important qualification:</strong> {f.historicalCsi.qualification}</p>}
+         <p className="fu-csi-disclaimer">These are historical company-reported CSI figures, NOT grant amounts available for applications. Confirm current opportunities and contact channels with the company.</p>
+        </div>}{f.support?.length>0&&<p><strong>Support offered:</strong> {f.support.join(' · ')}</p>}{f.geography&&<p><strong>Coverage:</strong> {f.geography}</p>}</div>
       <div><h3>Funding opportunities</h3>{calls.length?calls.map(op=><button className="fu-funder-opportunity" key={op.id} onClick={()=>onOpportunity(op.id)}><span><strong>{op.title}</strong><small><CalendarDays size={12}/>{displayFundingDate(op.deadline)} · {fundingState(op)==='closed'?'Closed':fundingState(op)==='open'?'Open for applications':'Contact funder'}</small></span><ArrowRight size={17}/></button>):<p>No publicly listed call from this funder in OPPOTRON yet. The funder may still accept enquiries or announce future funding windows.</p>}</div>
      </div></td></tr>}
     </React.Fragment>;

@@ -154,7 +154,7 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   finally{setBusy(false);}
  };
  useEffect(()=>{
-  if(access==='allowed'&&section==='funders'&&researchPreview&&researchPreview.imported<researchPreview.leads&&!autoSeedStarted.current){
+  if(access==='allowed'&&section==='funders'&&researchPreview&&researchPreview.imported===0&&!autoSeedStarted.current){
    autoSeedStarted.current=true;void importResearch();
   }
  },[access,section,researchPreview?.imported]);

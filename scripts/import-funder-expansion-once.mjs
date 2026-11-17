@@ -30,7 +30,10 @@ if(process.env.VERCEL_ENV!=='production'){
  if(FUNDING_EXPANSION_AUDITED_AT!=='2026-11-17'||MAJOR_FUNDERS.length<60||ADDITIONAL_VERIFIED_CALLS.length<10)
   throw new Error('[Funder expansion] Audited batch integrity mismatch.');
 
- const published=ADDITIONAL_VERIFIED_CALLS.filter(c=>c.status==='published');
+ // Deployment may occur days after the research: skip calls that have since closed
+ // instead of failing the whole build or publishing expired notices.
+ const expiredAtImport=ADDITIONAL_VERIFIED_CALLS.filter(c=>c.status==='published'&&isExpired(c));
+ const published=ADDITIONAL_VERIFIED_CALLS.filter(c=>c.status==='published'&&!isExpired(c));
  const pairs=new Set();
  for(const call of published){
   const op=normalizeOpportunity(call);
@@ -120,7 +123,7 @@ if(process.env.VERCEL_ENV!=='production'){
  const readOpportunities=await all(token,'opportunities');
  const today=Date.now();
  const current=readOpportunities.filter(o=>o.status==='published'&&o.verificationStatus==='verified'&&(o.deadline?(!isExpired(o,today)):/^rolling applications\b/i.test(o.round||'')));
- const summary={auditedAt:FUNDING_EXPANSION_AUDITED_AT,referenceFunders:MAJOR_FUNDERS.length,
+ const summary={auditedAt:FUNDING_EXPANSION_AUDITED_AT,expiredAtImport:expiredAtImport.length,referenceFunders:MAJOR_FUNDERS.length,
   validNewCalls:published.length,fundersCreated,contactsEnriched,fundersSkipped,
   callsCreated,callsSkipped,totalFunders:readFunders.length,totalOpportunities:readOpportunities.length,
   verifiedCurrentlyOpen:current.length,errors};

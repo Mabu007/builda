@@ -70,14 +70,36 @@ test('manual opportunities can be published without mandatory source verificatio
  assert.match(admin,/applicationInstructions/);
 });
 
-test('funding users can see offline contact options, and source sites are not mistaken for application links',()=>{
+test('funding display keeps offline contact paths and source sites separate from application links',()=>{
  const opportunities=source('src/workspace/FundingOpportunities.tsx');
+ const presentation=source('src/workspace/opportunity-display.ts');
  const tracking=source('src/workspace/FundingApplications.tsx');
- assert.match(opportunities,/selected\.contactEmail/);
  assert.match(opportunities,/selected\.contactPhone/);
- assert.match(opportunities,/selected\.applicationInstructions/);
- assert.match(opportunities,/View source website/);
+ assert.match(opportunities,/fu-modal-redesign/);
+ assert.match(presentation,/applicationInstructions/);
+ assert.match(presentation,/View funder website/);
+ assert.match(presentation,/mailto:/);
  assert.match(tracking,/selectedOp\.applicationInstructions/);
  assert.match(tracking,/selectedOp\?\.contactEmail/);
  assert.match(tracking,/selectedOp\?\.contactPhone/);
+});
+
+test('the funding modal leads with essential facts and removes the confusing technical status panel',()=>{
+ const ui=source('src/workspace/FundingOpportunities.tsx');
+ assert.match(ui,/Application deadline/);
+ assert.match(ui,/Funding or support/);
+ assert.match(ui,/Who can apply\?/);
+ assert.match(ui,/How to apply/);
+ assert.match(ui,/Prepare documents/);
+ assert.match(ui,/Track application/);
+ assert.doesNotMatch(ui,/Details unverified|Research status|What still needs verification|\/95 profile relevance/);
+});
+
+test('NPO workspace links to funders and linked funding records',()=>{
+ const ui=source('src/workspace/Workspace.tsx');
+ const directory=source('src/workspace/Funders.tsx');
+ assert.match(ui,/id: 'funders', label: 'Funders'/);
+ assert.match(ui,/<Funders user=/);
+ assert.match(directory,/onOpportunity\(op\.id\)/);
+ assert.match(directory,/contactEmail/);
 });

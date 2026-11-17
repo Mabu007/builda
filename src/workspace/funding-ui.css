@@ -156,3 +156,137 @@
 .fu-research-disclaimer span,.fu-research-disclaimer small{color:#89754a;font-size:10px;line-height:1.65}
 .bo-theme-dark .fu-research-disclaimer{background:#403a2b;border-color:#685b3c}
 .bo-theme-dark .fu-research-disclaimer strong,.bo-theme-dark .fu-research-disclaimer span,.bo-theme-dark .fu-research-disclaimer small{color:#eddaac}
+
+
+/* Funding opportunity — concise, calm decision-first layout */
+.fu-modal-redesign{width:min(920px,100%);max-height:min(91dvh,880px);border-radius:23px;background:#fff}
+.fu-modal-header{padding:27px 34px 24px;background:linear-gradient(135deg,#fcfefa 0%,#f7faf5 100%);gap:18px}
+.fu-modal-heading{min-width:0;flex:1}
+.fu-modal-eyebrow{display:flex;align-items:center;flex-wrap:wrap;gap:12px;color:#7a917f;font-size:10px;font-weight:750}
+.fu-status-pill{display:inline-flex;align-items:center;gap:8px;border:1px solid #cce4d0;background:#e8f5e9;color:#2f7951;border-radius:30px;padding:8px 12px;font-size:11px;font-weight:850}
+.fu-status-closed{color:#9b6654;background:#fff1e9;border-color:#f0d9ca}
+.fu-status-enquire{color:#806846;background:#f8f2e4;border-color:#ebdfc4}
+.fu-status-dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.fu-modal-header h2{font:800 clamp(21px,3vw,29px)/1.21 Manrope,'DM Sans',sans-serif;letter-spacing:-.05em;color:#254a37;margin:12px 0 13px}
+.fu-funder-nav{display:inline-flex;align-items:center;gap:8px;padding:0;border:0;background:transparent;color:#5f8767;font-size:12px;font-weight:750;text-align:left}
+.fu-funder-nav:hover,.fu-funder-nav:focus-visible{text-decoration:underline;color:#276940}
+.fu-modal-header .fu-close{flex:none;display:grid;place-items:center;width:37px;height:37px;border-radius:12px;background:#fff;border:1px solid #e2e9e2;color:#6c8873}
+.fu-modal-header .fu-close:hover{background:#eaf3e9}
+.fu-modal-main{padding:27px 34px 32px}
+.fu-funding-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:28px}
+.fu-funding-fact{min-width:0;border:1px solid #e5ede4;border-radius:13px;background:#fafcf9;padding:18px 16px}
+.fu-funding-fact>span{display:flex;align-items:center;gap:7px;color:#799381;font-size:10px;font-weight:800;letter-spacing:.01em}
+.fu-funding-fact>span svg{color:#80a28b;flex:none}
+.fu-funding-fact>strong{display:block;margin:11px 0 6px;color:#2d533b;font-size:17px;line-height:1.4;font-weight:850;overflow-wrap:anywhere}
+.fu-funding-fact>small{color:#98aa9b;font-size:10px;line-height:1.5}
+.fu-modal-story{max-width:760px}
+.fu-modal-section{margin:0 0 25px}
+.fu-modal-story .fu-modal-section h3{font:800 15px Manrope,'DM Sans',sans-serif;letter-spacing:-.025em;color:#305b41;margin:0 0 11px}
+.fu-modal-section>p{font-size:13px;line-height:1.85;color:#677b6b;margin:0;white-space:pre-wrap}
+.fu-modal-section .fu-requirement-inline{display:flex;align-items:flex-start;gap:7px;background:#f5f9f5;border:1px solid #e8eee7;border-radius:8px;padding:10px 12px;margin-top:11px;font-size:11px}
+.fu-requirement-inline svg{flex:none}
+.fu-important-condition{display:flex;align-items:flex-start;gap:13px;margin:1px 0 27px;border:1px solid #f0dfbf;background:#fffaf0;border-radius:12px;padding:17px 19px;color:#8b6a3a}
+.fu-important-condition>svg{flex:none;margin-top:2px}
+.fu-important-condition strong{display:block;font-size:12px;color:#825b2d;margin-bottom:6px}
+.fu-important-condition p{font-size:12px;line-height:1.7;margin:0;white-space:pre-wrap}
+.fu-how-apply{border-top:1px solid #e5ece4;padding-top:26px}
+.fu-how-apply ol{list-style:none;padding:0;margin:0;display:grid;gap:14px}
+.fu-how-apply li{display:flex;align-items:flex-start;gap:12px}
+.fu-how-apply li>span{width:25px;height:25px;border-radius:50%;background:#e6f1e7;color:#3d7651;font-size:11px;font-weight:850;display:grid;place-items:center;flex:none}
+.fu-how-apply li p{font-size:12px;line-height:1.7;color:#607965;margin:3px 0}
+.fu-how-apply .fu-contact-links{margin:18px 0 0}
+.fu-check-list{list-style:none;display:grid;gap:10px;padding:0;margin:0}
+.fu-check-list li{display:flex;align-items:flex-start;gap:10px;font-size:12px;line-height:1.6;color:#607966}
+.fu-check-list svg,.fu-supporting-files svg{flex:none;color:#769a7e;margin-top:2px}
+.fu-supporting-files{margin-top:15px;display:grid;gap:10px}
+.fu-supporting-files>div{display:flex;gap:9px;align-items:center;font-size:11px}
+.fu-supporting-files a,.fu-supporting-files button{display:inline-flex;align-items:center;gap:6px;color:#39764f;text-decoration:underline;overflow-wrap:anywhere}
+.fu-source-link{border-top:1px solid #e9efea;padding:16px 0 3px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:9px;font-size:10px;color:#93a698}
+.fu-source-link a{display:inline-flex;align-items:center;gap:6px;color:#527f5d;font-size:11px;font-weight:750;text-decoration:none}
+.fu-source-link a:hover{text-decoration:underline}
+.fu-modal-footer{display:grid;grid-template-columns:1fr 1fr 1.13fr;gap:11px;padding:18px 33px 20px;background:#fff;box-shadow:0 -9px 24px #1a3c2709}
+.fu-modal-footer>button,.fu-modal-footer>a{min-height:46px;min-width:0;border-radius:10px;padding:11px 13px;font-size:12px;font-weight:800;white-space:normal}
+.fu-modal-footer>.bo-primary{background:#315b3e;color:#fff}
+.fu-modal-footer>.bo-primary:hover{background:#234a34}
+.fu-card-state{font-size:10px;font-weight:850}
+.fu-state-open{color:#45865a}.fu-state-closed{color:#a47b6a}.fu-state-enquire{color:#9a845d}
+/* Public funders directory */
+.fu-funders-intro{display:flex;align-items:center;gap:24px;background:#ecf5ed;border:1px solid #dce9de;border-radius:14px;padding:18px 22px;margin:22px 0}
+.fu-funders-intro>div{display:flex;align-items:center;gap:11px;flex:none}
+.fu-funders-intro strong{font:850 29px Manrope,sans-serif;color:#2b5b3b}
+.fu-funders-intro span{font-size:11px;font-weight:750;color:#4d845d}
+.fu-funders-intro p{font-size:11px;line-height:1.7;color:#738e78;margin:0}
+.fu-funders-search{margin:0 0 17px;max-width:700px}
+.fu-funder-table-wrap{width:100%;overflow-x:auto;border:1px solid #dfe9e1;border-radius:15px;background:#fff;box-shadow:0 12px 30px #284e2d0a}
+.fu-funder-table{width:100%;min-width:780px;border-collapse:collapse;text-align:left}
+.fu-funder-table th{padding:17px 19px;background:#f5f9f5;color:#8ca592;font-size:9px;font-weight:850;letter-spacing:.1em}
+.fu-funder-table td{padding:20px 19px;border-top:1px solid #edf1eb;vertical-align:top;font-size:12px;color:#617d6a}
+.fu-funder-table td:first-child{width:25%}.fu-funder-table td:nth-child(2){width:29%}.fu-funder-table td:nth-child(3){width:29%}.fu-funder-table td:last-child{width:17%}
+.fu-funder-table td strong{display:block;color:#315540;font-size:12px;margin-bottom:5px;font-weight:820}
+.fu-funder-table td small{display:block;font-size:10px;line-height:1.6;color:#8ba08e}
+.fu-funder-focus{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 9px}
+.fu-funder-focus span{background:#edf5ee;color:#50795c;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:750}
+.fu-funder-info,.fu-funder-call-link{display:inline-flex;align-items:center;gap:5px;background:transparent;border:0;padding:0;text-align:left;color:#418159;font-size:11px;font-weight:750;margin-top:9px}
+.fu-funder-call-link{display:flex;line-height:1.55;margin-top:7px}
+.fu-funder-info:hover,.fu-funder-call-link:hover{text-decoration:underline}
+.fu-funder-count{display:block;font-weight:750;color:#5e8069;font-size:11px}
+.fu-funder-contact{display:flex;flex-direction:column;align-items:flex-start;gap:9px}
+.fu-funder-contact a{display:inline-flex;align-items:center;gap:6px;color:#49805a;font-size:11px;font-weight:750;text-decoration:none}
+.fu-funder-contact a:hover{text-decoration:underline}
+.fu-funder-contact>span{color:#a1aea2;font-size:11px}
+.fu-funder-row-expanded{background:#fbfdfb}
+.fu-funder-expanded>td{background:#f8faf7;padding:18px 23px!important}
+.fu-funder-detail{display:grid;grid-template-columns:1fr 1.1fr;gap:35px;max-width:930px}
+.fu-funder-detail h3{font:850 13px Manrope,sans-serif;color:#335b42;margin:0 0 12px}
+.fu-funder-detail p{color:#708875;line-height:1.8;font-size:11px;margin:0 0 10px}
+.fu-funder-opportunity{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:#fff;border:1px solid #e1ece2;border-radius:9px;padding:13px;margin:9px 0;text-align:left}
+.fu-funder-opportunity>span{min-width:0}.fu-funder-opportunity strong{font-size:11px;margin:0}.fu-funder-opportunity small{display:flex;align-items:center;gap:5px}
+.fu-directory-footnote{display:flex;gap:10px;align-items:flex-start;padding:23px 2px;color:#849b8b}
+.fu-directory-footnote svg{flex:none;margin-top:2px}.fu-directory-footnote p{font-size:11px;line-height:1.7;margin:0}
+@media(max-width:730px){
+ .fu-modal-header{padding:22px}.fu-modal-main{padding:21px}.fu-funding-facts{grid-template-columns:1fr 1fr}
+ .fu-funding-fact:last-child{grid-column:1/-1}.fu-modal-footer{grid-template-columns:1fr 1fr;padding:13px 18px 19px}
+ .fu-modal-footer>*:last-child{grid-column:1/-1}
+ .fu-funder-detail{grid-template-columns:1fr;gap:15px}
+ .fu-funders-intro{flex-direction:column;align-items:flex-start;gap:8px}
+}
+@media(max-width:560px){
+ .fu-modal-redesign{max-height:96dvh;border-radius:19px 19px 0 0}
+ .fu-modal-header{padding:20px 18px 16px}.fu-modal-main{padding:19px 17px}
+ .fu-modal-header h2{font-size:22px}.fu-modal-footer{padding:12px 13px calc(15px + env(safe-area-inset-bottom));gap:8px}
+ .fu-modal-footer>button,.fu-modal-footer>a{font-size:11px;min-height:42px}
+ .fu-funding-facts{gap:8px;margin-bottom:23px}.fu-funding-fact{padding:13px 12px}
+ .fu-funding-fact>strong{font-size:14px}.fu-funding-fact>span{font-size:9px}
+ .fu-modal-story .fu-modal-section h3{font-size:14px}
+ .fu-funder-table{min-width:710px}
+}
+/* Explicit dark-theme parity; no harsh light panels. */
+.bo-theme-dark .fu-modal-redesign,.bo-theme-dark .fu-funder-table-wrap,.bo-theme-dark .fu-modal-footer{background:#1d3033;border-color:#355149}
+.bo-theme-dark .fu-modal-header,.bo-theme-dark .fu-funder-expanded>td{background:#233b35;border-color:#355149}
+.bo-theme-dark .fu-modal-header h2,.bo-theme-dark .fu-funding-fact strong,.bo-theme-dark .fu-modal-story .fu-modal-section h3,.bo-theme-dark .fu-funder-table td strong,.bo-theme-dark .fu-funder-detail h3{color:#d6e9dc}
+.bo-theme-dark .fu-funding-fact,.bo-theme-dark .fu-funders-intro,.bo-theme-dark .fu-funder-table th,.bo-theme-dark .fu-funder-row-expanded{background:#274037;border-color:#3e5b48}
+.bo-theme-dark .fu-modal-section>p,.bo-theme-dark .fu-funding-fact>span,.bo-theme-dark .fu-funding-fact>small,.bo-theme-dark .fu-funder-table td,.bo-theme-dark .fu-funder-detail p,.bo-theme-dark .fu-funders-intro p{color:#a8bfad}
+.bo-theme-dark .fu-funder-table td,.bo-theme-dark .fu-source-link,.bo-theme-dark .fu-how-apply{border-color:#375648}
+.bo-theme-dark .fu-important-condition{background:#403729;border-color:#625338;color:#eed7aa}
+.bo-theme-dark .fu-important-condition strong{color:#f4ddaf}
+.bo-theme-dark .fu-how-apply li p{color:#b5c9b9}
+.bo-theme-dark .fu-funder-focus span,.bo-theme-dark .fu-how-apply li>span{background:#365648;color:#c7e5cb}
+.bo-theme-dark .fu-funder-opportunity{background:#203735;border-color:#46624d}
+
+/* Phone-sized directory: one readable funder card per row instead of a horizontal spreadsheet. */
+@media(max-width:650px){
+ .fu-funder-table-wrap{background:transparent;border:0;box-shadow:none;overflow:visible}
+ .fu-funder-table{display:block;min-width:0}
+ .fu-funder-table thead{display:none}
+ .fu-funder-table tbody{display:grid;gap:12px}
+ .fu-funder-table tbody>tr:not(.fu-funder-expanded){display:grid;grid-template-columns:1fr;gap:0;border:1px solid #dfeae0;border-radius:13px;padding:16px;background:#fff;box-shadow:0 7px 20px #20432c08}
+ .fu-funder-table tbody>tr:not(.fu-funder-expanded)>td{display:block;width:100%;padding:10px 0;border:0}
+ .fu-funder-table tbody>tr:not(.fu-funder-expanded)>td:first-child{padding-top:0}
+ .fu-funder-table tbody>tr:not(.fu-funder-expanded)>td:nth-child(3),
+ .fu-funder-table tbody>tr:not(.fu-funder-expanded)>td:nth-child(4){border-top:1px solid #edf1eb}
+ .fu-funder-contact{flex-direction:row;flex-wrap:wrap;gap:16px}
+ .fu-funder-expanded{display:block}
+ .fu-funder-expanded>td{display:block!important;width:100%!important;padding:14px!important}
+ .fu-funder-focus{margin:3px 0 8px}
+ .bo-theme-dark .fu-funder-table tbody>tr:not(.fu-funder-expanded){background:#203735;border-color:#365248}
+}

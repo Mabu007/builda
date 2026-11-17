@@ -1,13 +1,14 @@
 import React, {useEffect,useMemo,useState} from 'react';
 import type {User} from 'firebase/auth';
 import {collection,deleteDoc,doc,onSnapshot,query,serverTimestamp,setDoc,where} from 'firebase/firestore';
-import {ArrowRight,ArrowUpRight,Bookmark,CalendarDays,CheckCircle2,ClipboardCheck,FilePenLine,FileText,FolderOpen,HeartHandshake,LockKeyhole,Mail,Phone,Search,Sparkles,ShieldCheck,X} from 'lucide-react';
+import {ArrowRight,ArrowUpRight,Bookmark,CalendarDays,ClipboardCheck,ExternalLink,FilePenLine,FileText,HeartHandshake,Info,Mail,MapPin,Phone,Search,Sparkles,Wallet,X} from 'lucide-react';
 import {db} from '../firebase';
 import {matchOpportunity,opportunityExpired,profileProgress,type FundingOpportunity} from './funding';
+import {confirmedCall} from './confirmed-funding';
+import {applicationRoute,applicationSteps,daysToDeadline,displayFundingDate,fundingState,fundingStatusText,importantCondition,plainSummary,whoCanApply} from './opportunity-display';
 import './funding-ui.css';
-type Props={user:User;profile:Record<string,string>;files:{name:string;category:string}[];onPrepare:(op:FundingOpportunity)=>void;onApplications:()=>void;onProfile:()=>void};
-const displayDate=(x?:string)=>x?new Date(x+'T12:00:00Z').toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'}):'Not specified';
-export default function FundingOpportunities({user,profile,files,onPrepare,onApplications,onProfile}:Props){
+type Props={user:User;profile:Record<string,string>;files:{name:string;category:string}[];onPrepare:(op:FundingOpportunity)=>void;onApplications:()=>void;onProfile:()=>void;onFunder:(name:string)=>void;openOpportunityId?:string;onOpenHandled?:()=>void};
+export default function FundingOpportunities({user,profile,files,onPrepare,onApplications,onProfile,onFunder,openOpportunityId,onOpenHandled}:Props){
  const [all,setAll]=useState<FundingOpportunity[]>([]),[saved,setSaved]=useState<string[]>([]),[applications,setApplications]=useState<string[]>([]);
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[selected,setSelected]=useState<FundingOpportunity|null>(null);
  const [search,setSearch]=useState(''),[sector,setSector]=useState(''),[working,setWorking]=useState('');
@@ -20,6 +21,19 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
   const a=onSnapshot(collection(db,'contractors',user.uid,'applications'),snap=>setApplications(snap.docs.map(item=>item.id)),()=>setError('Applications could not be loaded.'));
   return()=>{u();s();a();};
  },[user.uid]);
+ useEffect(()=>{
+  if(!openOpportunityId)return;
+  const found=all.find(op=>op.id===openOpportunityId);
+  if(found){setSelected(found);onOpenHandled?.();}
+ },[openOpportunityId,all,onOpenHandled]);
+ useEffect(()=>{
+  if(!selected)return;
+  const previous=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')setSelected(null);};
+  window.addEventListener('keydown',onKey);
+  return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',onKey);};
+ },[Boolean(selected)]);
  const readiness=profileProgress(profile);
  const sectors=useMemo(()=>[...new Set(all.map(o=>o.sector).filter(Boolean))].sort(),[all]);
  const matched=useMemo(()=>all.filter(op=>op.status==='published').map(op=>({op,match:matchOpportunity(op,profile,files)}))
@@ -59,7 +73,10 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
    if(tab)tab.location.replace(data.url);else window.location.assign(data.url);
   }catch{tab?.close();setError('Could not open this funding document.');}
  };
- const match=selected?matchOpportunity(selected,profile,files):null;
+ const confirmed=selected?confirmedCall(selected):undefined;
+ const route=selected?applicationRoute(selected):null;
+ const selectedState=selected?fundingState(selected):'enquire';
+ const remaining=selected?daysToDeadline(selected):null;
  return <>
   <div className="bo-page-heading"><div><div className="bo-eyebrow"><HeartHandshake size={14}/> FUNDING INTELLIGENCE</div><h1>Funding opportunities<span className="bo-heading-dot">.</span></h1><p>Explore every published funding call. Add 30% of your profile to see opportunities ranked for your organisation.</p></div></div>
   {error&&<div className="bo-inline-error" role="alert">{error}<button onClick={()=>window.location.reload()}>Retry</button></div>}
@@ -72,44 +89,56 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
    <div className="fu-toolbar"><label className="fu-search"><Search size={18}/><input aria-label="Search funding opportunities" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search funding, funders or programmes…"/></label>
     <select aria-label="Funding sector" value={sector} onChange={e=>setSector(e.target.value)}><option value="">All focus areas</option>{sectors.map(x=><option key={x}>{x}</option>)}</select></div>
    {loading?<div className="bo-skeleton-wrap">{[1,2,3].map(i=><div className="bo-skeleton" key={i}/>)}</div>:
-    visible.length?<div className="fu-opportunity-grid">{visible.map(({op,match:m})=><article className="fu-opportunity-card" key={op.id}>
-     <div className="fu-card-overline"><span><HeartHandshake size={15}/> {op.sector||'Funding'}</span><span>{opportunityExpired(op)?'Deadline passed':!op.sourceUrl&&!op.applicationUrl?'Admin-listed':op.verificationStatus==='verified'?'Source checked':'Details unverified'}</span></div>
+    visible.length?<div className="fu-opportunity-grid">{visible.map(({op})=><article className="fu-opportunity-card" key={op.id}>
+     <div className="fu-card-overline"><span><HeartHandshake size={15}/> {op.sector||'Funding'}</span><span className={'fu-card-state fu-state-'+fundingState(op)}>{fundingStatusText(op)}</span></div>
      <h3>{op.title}</h3><p className="fu-funder">{op.funder}</p>
-     <p className="fu-desc">{op.description||'Description not provided. Contact the funder for more information.'}</p>
-      {op.researchType&&<p className="fu-research-context">{op.researchType} · Research checked {op.researchCheckedAt||'16 Nov 2026'}</p>}
-     <div className="fu-match-summary"><Sparkles size={17}/><span><strong>{readiness.personalised?m.score+'/95 profile relevance':'Published funding call'}</strong><small>{readiness.personalised?(m.reasons[0]||'Check funder eligibility'):'Personalised ordering starts at 30% profile completion'}</small></span></div>
-     <div className="fu-meta"><span><CalendarDays size={14}/>{op.deadline?displayDate(op.deadline):'Deadline not supplied'}</span><span>{op.amount||'Amount not specified'}</span></div>
+     <p className="fu-desc">{plainSummary(op)}</p>
+      
+     
+     <div className="fu-meta"><span><CalendarDays size={14}/>{op.deadline?displayFundingDate(op.deadline):'No deadline listed'}</span><span>{op.amount||'Amount not specified'}</span></div>
      <div className="fu-card-actions"><button className="bo-outline" onClick={()=>void save(op)} disabled={working===op.id}><Bookmark size={16} fill={saved.includes(op.id)?'currentColor':'none'}/>{saved.includes(op.id)?'Saved':'Save'}</button><button className="bo-primary" onClick={()=>setSelected(op)}>View details <ArrowRight size={16}/></button></div>
     </article>)}</div>:<section className="fu-empty"><span className="fu-empty-symbol"><HeartHandshake size={28}/></span>
      <h2>{all.length?'No opportunities match these filters.':'Funding sources are being added.'}</h2>
      <p>{all.length?'Try clearing the search or selecting all focus areas. Every published call remains accessible.':'The administration team is discovering and reviewing funding calls. Published records will appear here automatically.'}</p>
     </section>}
   {selected&&<div className="fu-modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setSelected(null);}}>
-   <section className="fu-modal" role="dialog" aria-modal="true" aria-labelledby="fu-modal-title">
-    <div className="fu-modal-head"><div><span className="bo-small-kicker">FUNDING OPPORTUNITY</span><h2 id="fu-modal-title">{selected.title}</h2><p>{selected.funder} · {selected.sector}</p></div><button className="fu-close" aria-label="Close" onClick={()=>setSelected(null)}><X size={21}/></button></div>
-    <div className="fu-modal-body">
-     <div className="fu-detail-badges"><span><CalendarDays size={15}/> {displayDate(selected.deadline)}</span><span>{selected.amount||'Funding amount not specified'}</span><span>{selected.coverage||'Coverage unverified'}</span></div>
-     <p className="fu-detail-text">{selected.description||'No description has been supplied. Contact the funder to confirm details.'}</p>
-      {selected.researchStatus&&<div className="fu-research-disclaimer"><strong>Research status · {selected.researchStatus}</strong><span>Source checked {selected.researchCheckedAt||'2026-11-16'}. This is a funding lead, not a guaranteed active grant. Confirm the deadline and eligibility directly with the funder.</span>{selected.researchFit&&<small>Applicant fit: {selected.researchFit}</small>}{selected.researchType&&<small>Support type: {selected.researchType}</small>}</div>}
-     {(selected.applicationInstructions||selected.contactEmail||selected.contactPhone)&&<><h3><Mail size={17}/> How to apply or enquire</h3>
-      {selected.applicationInstructions&&<p className="fu-detail-text">{selected.applicationInstructions}</p>}
-      <div className="fu-contact-links">
-       {selected.contactEmail&&<a href={'mailto:'+selected.contactEmail}><Mail size={16}/>{selected.contactEmail}</a>}
-       {selected.contactPhone&&<a href={'tel:'+selected.contactPhone.replace(/[^\d+]/g,'')}><Phone size={16}/>{selected.contactPhone}</a>}
-      </div>
-     </>}
-
-     {readiness.personalised?<><h3><Sparkles size={17}/> Relevance to your organisation</h3><div className="fu-detail-list">{(match?.reasons.length?match.reasons:['Review eligibility directly with the funder']).map(x=><p key={x}><CheckCircle2 size={15}/>{x}</p>)}</div></>:<p className="fu-detail-text">Add 30% of your organisation profile to unlock relevance ranking. You can review this funding opportunity now.</p>}
-     <h3><ShieldCheck size={17}/> Eligibility & requirements</h3>
-     <p className="fu-detail-text">{selected.eligibility||'Eligibility conditions were not supplied. Contact the funder to confirm.'}</p>
-     <p className="fu-detail-text">{selected.registration?('Registration: '+selected.registration):'Registration requirements not specified.'}</p>
-     <div className="fu-detail-list">{(selected.requirements||[]).map(x=><p key={x}><FileText size={15}/>{x}</p>)}</div>
-     {match?.missingDocuments.length?<><h3><FolderOpen size={17}/> Documents to check</h3><div className="fu-detail-list">{match.missingDocuments.map(x=><p key={x}><FolderOpen size={15}/>{x} — not found by filename/category; confirm the actual contents.</p>)}</div></>:null}
-     {match?.gaps.length?<><h3>What still needs verification</h3><div className="fu-detail-list">{match.gaps.map(x=><p key={x}><LockKeyhole size={15}/>{x}</p>)}</div></>:null}
-     {(selected.documents||[]).length?<><h3>Supporting documents</h3><div className="fu-detail-list">{selected.documents.map((d,i)=><p key={i}><FileText size={15}/>{d.status==='stored'&&d.storageKey?<button onClick={()=>void openStored(selected,d.storageKey!)}>{d.title} · Open stored PDF</button>:<a href={d.sourceUrl} target="_blank" rel="noopener noreferrer">{d.title} · Official source</a>}</p>)}</div></>:null}
-     <p className="fu-source-note">Profile relevance is not an eligibility decision. Confirm requirements, contact information, amounts and deadlines directly with the funder before applying.</p>
+   <section className="fu-modal fu-modal-redesign" role="dialog" aria-modal="true" aria-labelledby="fu-modal-title">
+    <div className="fu-modal-head fu-modal-header">
+     <div className="fu-modal-heading">
+      <div className="fu-modal-eyebrow"><span className={'fu-status-pill fu-status-'+selectedState}><span className="fu-status-dot"/>{fundingStatusText(selected)}</span><span>{confirmed?.type||selected.researchType||selected.sector||'Funding opportunity'}</span></div>
+      <h2 id="fu-modal-title">{selected.title}</h2>
+      <button className="fu-funder-nav" onClick={()=>{onFunder(selected.funder);setSelected(null);}}><HeartHandshake size={15}/>{selected.funder||'Funder not specified'}<ArrowRight size={14}/></button>
+     </div>
+     <button className="fu-close" aria-label="Close funding opportunity" onClick={()=>setSelected(null)}><X size={21}/></button>
     </div>
-    <div className="fu-modal-actions"><button className="bo-outline" onClick={()=>{onPrepare(selected);setSelected(null);}}><FilePenLine size={15}/> Prepare document</button><button className="bo-outline" onClick={()=>void start(selected)} disabled={working===selected.id}><ClipboardCheck size={15}/>{applications.includes(selected.id)?'Open application':'Track application'}</button>{selected.applicationUrl?<a className="bo-primary" href={selected.applicationUrl} target="_blank" rel="noopener noreferrer">Application website <ArrowUpRight size={16}/></a>:selected.sourceUrl?<a className="bo-primary" href={selected.sourceUrl} target="_blank" rel="noopener noreferrer">View source website <ArrowUpRight size={16}/></a>:selected.contactEmail?<a className="bo-primary" href={'mailto:'+selected.contactEmail}><Mail size={16}/> Email funder</a>:selected.contactPhone?<a className="bo-primary" href={'tel:'+selected.contactPhone.replace(/[^\d+]/g,'')}><Phone size={16}/> Call funder</a>:null}</div>
+    <div className="fu-modal-body fu-modal-main">
+     <div className="fu-funding-facts">
+      <div className="fu-funding-fact"><span><CalendarDays size={16}/> Application deadline</span><strong>{selected.deadline?displayFundingDate(selected.deadline):'Contact funder'}</strong><small>{selectedState==='closed'?'Applications have closed':selectedState==='open'&&remaining!==null?(remaining===0?'Closes today':remaining===1?'Closes tomorrow':remaining+' days left'):'Confirm the application window'}</small></div>
+      <div className="fu-funding-fact"><span><Wallet size={16}/> Funding or support</span><strong>{confirmed?.amount||selected.amount||'Not specified'}</strong><small>{confirmed?.type||selected.researchType||selected.sector||'Programme support'}</small></div>
+      <div className="fu-funding-fact"><span><MapPin size={16}/> Where it applies</span><strong>{confirmed?.coverage||selected.coverage||'Ask the funder'}</strong><small>Location eligibility</small></div>
+     </div>
+     <div className="fu-modal-story">
+      <div className="fu-modal-section"><h3>What is this opportunity?</h3><p>{plainSummary(selected)}</p></div>
+      <div className="fu-modal-section"><h3>Who can apply?</h3><p>{whoCanApply(selected)}</p>{selected.registration&&<p className="fu-requirement-inline"><Info size={15}/> Registration: {selected.registration}</p>}</div>
+      {importantCondition(selected)&&<div className="fu-important-condition"><Info size={19}/><div><strong>Important to know</strong><p>{importantCondition(selected)}</p></div></div>}
+      <div className="fu-modal-section fu-how-apply"><h3>How to apply</h3><ol>{applicationSteps(selected).map((step,index)=><li key={index}><span>{index+1}</span><p>{step}</p></li>)}</ol>
+       {(confirmed?.contactEmail||selected.contactEmail||selected.contactPhone)&&<div className="fu-contact-links">
+        {(confirmed?.contactEmail||selected.contactEmail)&&<a href={'mailto:'+(confirmed?.contactEmail||selected.contactEmail)}><Mail size={16}/>{confirmed?.contactEmail||selected.contactEmail}</a>}
+        {selected.contactPhone&&<a href={'tel:'+selected.contactPhone.replace(/[^\d+]/g,'')}><Phone size={16}/>{selected.contactPhone}</a>}
+       </div>}
+      </div>
+      {(selected.requirements?.length>0||selected.documents?.length>0)&&<div className="fu-modal-section"><h3>Documents and requirements</h3>
+       {selected.requirements?.length>0&&<ul className="fu-check-list">{selected.requirements.map((item,index)=><li key={index}><FileText size={15}/>{item}</li>)}</ul>}
+       {selected.documents?.length>0&&<div className="fu-supporting-files">{selected.documents.map((document,index)=><div key={index}><FileText size={15}/>{document.status==='stored'&&document.storageKey?<button onClick={()=>void openStored(selected,document.storageKey!)}>{document.title} · Open PDF</button>:<a href={document.sourceUrl} target="_blank" rel="noopener noreferrer">{document.title} <ExternalLink size={13}/></a>}</div>)}</div>}
+      </div>}
+      {(confirmed?.sourceUrl||selected.sourceUrl)&&<div className="fu-source-link"><span>{confirmed?'Funder details checked on 17 Nov 2026':'Funding details from the listed source'}</span><a href={confirmed?.sourceUrl||selected.sourceUrl} target="_blank" rel="noopener noreferrer">Read official information <ExternalLink size={14}/></a></div>}
+     </div>
+    </div>
+    <div className="fu-modal-actions fu-modal-footer">
+     <button className="bo-outline" onClick={()=>{onPrepare(selected);setSelected(null);}}><FilePenLine size={17}/> Prepare documents</button>
+     <button className="bo-outline" onClick={()=>void start(selected)} disabled={working===selected.id}><ClipboardCheck size={17}/>{applications.includes(selected.id)?'Open application':'Track application'}</button>
+     {selectedState==='closed'?(confirmed?.sourceUrl||selected.sourceUrl?<a className="bo-primary" href={confirmed?.sourceUrl||selected.sourceUrl} target="_blank" rel="noopener noreferrer">View closed call <ExternalLink size={17}/></a>:<button className="bo-primary" disabled>Applications closed</button>):route?<a className="bo-primary" href={route.url} target={route.kind==='website'?'_blank':undefined} rel={route.kind==='website'?'noopener noreferrer':undefined}>{route.label} {route.kind==='email'?<Mail size={17}/>:route.kind==='phone'?<Phone size={17}/>:<ArrowUpRight size={17}/>}</a>:<button className="bo-primary" disabled title="Application details have not been supplied">Application details unavailable</button>}
+    </div>
    </section>
   </div>}
  </>;

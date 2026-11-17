@@ -357,10 +357,10 @@ export const ADDITIONAL_VERIFIED_CALLS=[
     "sourceUrl": "https://chieta.org.za/",
     "applicationInstructions": "Use the official CHIETA IMS application portal and review the 2027/28 Cycle 1 DG guidelines before submitting by 10 December. Late or emailed applications are not accepted.",
     "source": "official-funder-audit-2026",
-    "verificationStatus": "verified",
-    "status": "published",
-    "published": true,
+    "verificationStatus": "reviewed",
+    "status": "draft",
+    "published": false,
     "lastCheckedAt": "2026-11-17",
-    "evidenceSourceType": "official-funder-website"
+    "evidenceSourceType": "needs-current-official-notice"
   }
 ];

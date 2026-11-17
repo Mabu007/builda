@@ -24,7 +24,8 @@ export function identityKey(values) {
 export function canonicalKey(value) {
  const url=publicUrl(value.canonicalUrl||value.sourceUrl||value.applicationUrl);
  if(!url)return '';
- return createHash('sha256').update(url+'|'+shorten(value.round||value.deadline||'ongoing',100).toLowerCase()).digest('hex').slice(0,40);
+ // Multiple distinct funding streams can share a single programme landing page.
+ return createHash('sha256').update(url+'|'+identityKey(value)).digest('hex').slice(0,40);
 }
 function textList(value,max=20) {
  const values=Array.isArray(value)?value:typeof value==='string'?value.split(/[\n;]+/):[];
@@ -71,7 +72,16 @@ export function normalizeOpportunity(raw={},existing={}) {
   verificationStatus:verification,status,published:status==='published',source:shorten(raw.source||'manual',40),
   extractedAt:shorten(raw.extractedAt||existing.extractedAt,40),
   lastCheckedAt:shorten(raw.lastCheckedAt||existing.lastCheckedAt,40),
-  notes:shorten(raw.notes,2000)
+  notes:shorten(raw.notes,2000),
+  researchLeadId:shorten(raw.researchLeadId||existing.researchLeadId,32),
+  researchStatus:shorten(raw.researchStatus||existing.researchStatus,180),
+  researchType:shorten(raw.researchType||existing.researchType,140),
+  researchFit:shorten(raw.researchFit||existing.researchFit,140),
+  researchAudience:shorten(raw.researchAudience||existing.researchAudience,1000),
+  researchDeadlineText:shorten(raw.researchDeadlineText||existing.researchDeadlineText,90),
+  researchCheckedAt:shorten(raw.researchCheckedAt||existing.researchCheckedAt,32),
+  researchCaveat:shorten(raw.researchCaveat||existing.researchCaveat,1800),
+  researchNextAction:shorten(raw.researchNextAction||existing.researchNextAction,1000)
  };
 }
 export function isExpired(op,now=Date.now()) {

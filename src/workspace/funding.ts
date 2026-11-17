@@ -3,6 +3,9 @@ export type FundingOpportunity={
  registration:string;coverage:string;amount:string;deadline:string;round:string;
  requirements:string[];applicationUrl:string;sourceUrl:string;contactEmail?:string;contactPhone?:string;applicationInstructions?:string;documents:{title:string;sourceUrl:string;storageKey?:string;status?:string;size?:number}[];
  verificationStatus:string;status:string;published:boolean;lastCheckedAt?:string;
+ source?:string;researchLeadId?:string;researchStatus?:string;researchType?:string;researchFit?:string;
+ researchAudience?:string;researchDeadlineText?:string;researchCheckedAt?:string;
+ researchCaveat?:string;researchNextAction?:string;
 };
 export type MatchResult={score:number;reasons:string[];gaps:string[];eligible:boolean;missingDocuments:string[]};
 export const FUNDING_PROFILE_FIELDS=['name','registration','description','category','province','coverage','services','beneficiaries','projects','goals'] as const;

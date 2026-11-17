@@ -6,17 +6,22 @@ import {
  CheckCircle2,ChevronRight,ClipboardCheck,Clock3,CloudDownload,Compass,Edit3,
  ExternalLink,FileText,Filter,FolderOpen,HeartHandshake,LayoutDashboard,Link2,
  LockKeyhole,LogOut,Menu,Plus,RefreshCw,Search,Settings2,ShieldCheck,Sparkles,
- Trash2,Users,X
+ Trash2,Users,Building2,Mail,Phone,X
 } from 'lucide-react';
 import {auth} from '../firebase';
-import type {FundingOpportunity} from '../workspace/funding';
+import {FUNDING_PROFILE_FIELDS,type FundingOpportunity} from '../workspace/funding';
 import './admin.css';
-type Section='overview'|'users'|'opportunities'|'discovery';
+type Section='overview'|'users'|'npos'|'funders'|'opportunities'|'discovery';
 type UserRecord={uid:string;email:string;createdAt:string;lastLoginAt:string;disabled:boolean;organisation:Record<string,unknown>|null};
 type Candidate={id:string;jobId:string;sourceUrl:string;title:string;data:Partial<FundingOpportunity>|null;duplicateOf:string;status:string;notice?:string;error?:string;extractedAt:string;importedOpportunityId?:string};
 type Job={id:string;mode:string;query:string;sourceUrl:string;status:string;urls:{url:string}[];cursor:number;provider?:string;fallback?:boolean;providerNotice?:string;errors:{message:string}[];createdAt:string};
-type Summary={totalUsers:number|null;organisations:number;totalOpportunities:number;published:number;active:number;pendingReviews:number;discoveryJobs:number;discoveryRunning:number;partial?:boolean};
+type Summary={totalUsers:number|null;organisations:number;totalFunders:number;totalOpportunities:number;published:number;active:number;pendingReviews:number;discoveryJobs:number;discoveryRunning:number;partial?:boolean};
 type AdminData={items:FundingOpportunity[];hasMore:boolean};
+type FunderRecord={id?:string;name:string;website?:string;contactEmail?:string;contactPhone?:string;description?:string;notes?:string;published?:boolean;sectors?:string[];fundingTypes?:string[];researchStatuses?:string[];sourceUrls?:string[];researchLeadCount?:number;researchLastCheckedAt?:string;geography?:string};
+type ResearchPreview={leads:number;funders:number;explicitlyOpen:number;uncertain:number;imported:number;checkedAt:string;warning:string};
+type ImportProgress={processed:number;total:number;created:number;skipped:number;errors:string[]};
+const blankFunder:FunderRecord={name:'',website:'',contactEmail:'',contactPhone:'',description:'',notes:'',published:false};
+const npoProgress=(record:UserRecord)=>FUNDING_PROFILE_FIELDS.filter(key=>String(record.organisation?.[key]||'').trim()).length*10;
 type Props={user:User;onExit:()=>void;onWorkspace:()=>void};
 type Editor={
  id:string;title:string;funder:string;description:string;sector:string;eligibility:string;
@@ -33,6 +38,8 @@ const sectors=['Education','Youth development','Healthcare','Community developme
 const sections:{id:Section;label:string;icon:React.ReactNode}[]=[
  {id:'overview',label:'Overview',icon:<LayoutDashboard size={18}/>},
  {id:'users',label:'Users',icon:<Users size={18}/>},
+  {id:'npos',label:'NPOs',icon:<Building2 size={18}/>},
+  {id:'funders',label:'Funders',icon:<HeartHandshake size={18}/>},
  {id:'opportunities',label:'Opportunities',icon:<HeartHandshake size={18}/>},
  {id:'discovery',label:'Discovery Engine',icon:<Compass size={18}/>}
 ];
@@ -64,6 +71,9 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
  const [section,setSection]=useState<Section>('overview'),[navOpen,setNavOpen]=useState(false);
  const [summary,setSummary]=useState<Summary|null>(null),[users,setUsers]=useState<UserRecord[]>([]),[usersWarning,setUsersWarning]=useState('');
  const [opportunities,setOpportunities]=useState<FundingOpportunity[]>([]),[candidates,setCandidates]=useState<Candidate[]>([]),[jobs,setJobs]=useState<Job[]>([]);
+ const [funders,setFunders]=useState<FunderRecord[]>([]),[funderSearch,setFunderSearch]=useState(''),[funderEditor,setFunderEditor]=useState<FunderRecord|null>(null);
+ const [researchPreview,setResearchPreview]=useState<ResearchPreview|null>(null),[seedBusy,setSeedBusy]=useState(false),[importProgress,setImportProgress]=useState<ImportProgress|null>(null);
+ const autoSeedStarted=useRef(false);
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [search,setSearch]=useState(''),[filter,setFilter]=useState('all');
  const [userSearch,setUserSearch]=useState(''),[selectedUser,setSelectedUser]=useState<UserRecord|null>(null),[hasMoreOpportunities,setHasMoreOpportunities]=useState(false);
@@ -86,7 +96,12 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   setLoading(true);setError('');
   try{
    if(next==='overview')setSummary(await adminApi<Summary>(user,'overview'));
-   if(next==='users'){const data=await adminApi<{items:UserRecord[];warning:string}>(user,'users');setUsers(data.items);setUsersWarning(data.warning||'');}
+   if(next==='users'||next==='npos'){const data=await adminApi<{items:UserRecord[];warning:string}>(user,'users');setUsers(data.items||[]);setUsersWarning(data.warning||'');}
+    if(next==='funders'){const [data,preview]=await Promise.all([
+      adminApi<{items:FunderRecord[]}>(user,'funders'),
+      adminApi<ResearchPreview>(user,'research-preview')]);
+      setFunders(data.items||[]);setResearchPreview(preview);
+    }
    if(next==='opportunities'){const data=await adminApi<AdminData>(user,'opportunities');setOpportunities(data.items||[]);setHasMoreOpportunities(Boolean(data.hasMore));}
    if(next==='discovery'){
     const [a,b]=await Promise.all([adminApi<{items:Candidate[]}>(user,'candidates'),adminApi<{items:Job[]}>(user,'jobs')]);
@@ -110,6 +125,39 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   }catch(e){setError(e instanceof Error?e.message:'Action failed.');}
   finally{setBusy(false);}
  };
+ const importResearch=async()=>{
+  if(seedBusy)return;
+  setSeedBusy(true);setError('');setNotice('');
+  let processed=0,created=0,skipped=0,errors:string[]=[];
+  const total=researchPreview?.leads||50;
+  try{
+   for(let offset=0;offset<total;offset+=5){
+    const result=await adminApi<{nextOffset:number;imported:number;skipped:number;errors:{leadId:string;message:string}[]}>(user,'research-import',{offset,limit:5});
+    processed=result.nextOffset;created+=result.imported;skipped+=result.skipped;
+    errors=[...errors,...result.errors.map(e=>'Lead '+e.leadId+': '+e.message)];
+    setImportProgress({processed,total,created,skipped,errors});
+   }
+   await fetchSection('funders');
+   if(errors.length)setError(errors.length+' research leads need attention. Retrying is safe; existing records are not overwritten.');
+   else setNotice('Research import complete: '+created+' added, '+skipped+' already present. Funders and opportunities are ready.');
+  }catch(e){setError('Import interrupted. You can retry safely. '+(e instanceof Error?e.message:''));}
+  finally{setSeedBusy(false);}
+ };
+ const saveFunderDetails=async()=>{
+  if(!funderEditor||busy)return;
+  setBusy(true);setError('');
+  try{
+   await adminApi(user,'funder-save',funderEditor);
+   setFunderEditor(null);setNotice('Funder details saved.');
+   await fetchSection('funders');
+  }catch(e){setError(e instanceof Error?e.message:'Unable to save funder details.');}
+  finally{setBusy(false);}
+ };
+ useEffect(()=>{
+  if(access==='allowed'&&section==='funders'&&researchPreview&&researchPreview.imported<researchPreview.leads&&!autoSeedStarted.current){
+   autoSeedStarted.current=true;void importResearch();
+  }
+ },[access,section,researchPreview?.imported]);
  const submitEditor=async(e:React.FormEvent)=>{
   e.preventDefault();if(!editor)return;
   const input=toRecord(editor);
@@ -159,13 +207,16 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
   return()=>window.clearInterval(interval);
  },[access,jobActive]);
  useEffect(()=>{
-  if(!editor&&!selectedUser)return;
+  if(!editor&&!selectedUser&&!funderEditor)return;
   const previous=document.body.style.overflow;document.body.style.overflow='hidden';
-  const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape'&&!busy){setEditor(null);setCandidateEdit(null);setSelectedUser(null);}};
+  const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape'&&!busy){setEditor(null);setCandidateEdit(null);setSelectedUser(null);setFunderEditor(null);}};
   window.addEventListener('keydown',onKey);
   return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',onKey);};
- },[Boolean(editor),Boolean(selectedUser),busy]);
+ },[Boolean(editor),Boolean(selectedUser),Boolean(funderEditor),busy]);
  const recent=(jobs||[]).find(job=>job.id===jobActive);
+ const npos=users.filter(record=>Boolean(record.organisation&&record.organisation.organizationType!=='business'&&(record.organisation.name||record.organisation.organizationType==='npo')));
+ const filteredNpos=npos.filter(record=>[record.email,record.uid,record.organisation?.name,record.organisation?.category,record.organisation?.province].some(value=>String(value||'').toLowerCase().includes(userSearch.trim().toLowerCase())));
+ const filteredFunders=funders.filter(record=>[record.name,record.description,record.geography,...(record.sectors||[]),...(record.fundingTypes||[])].some(value=>String(value||'').toLowerCase().includes(funderSearch.trim().toLowerCase()))).sort((a,b)=>a.name.localeCompare(b.name));
  const filteredUsers=users.filter(record=>[record.email,record.uid,record.organisation?.name,record.organisation?.category,record.organisation?.province]
    .some(value=>String(value||'').toLowerCase().includes(userSearch.trim().toLowerCase())));
  const reviewableCandidates=candidates.filter(candidate=>candidate.status!=='discarded');
@@ -184,16 +235,17 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
    <div className="oa-content">
     {notice&&<div className="oa-feedback success" role="status"><CheckCircle2 size={17}/>{notice}<button aria-label="Dismiss" onClick={()=>setNotice('')}><X size={15}/></button></div>}
     {error&&<div className="oa-feedback error" role="alert"><Bell size={17}/>{error}<button aria-label="Dismiss" onClick={()=>setError('')}><X size={15}/></button></div>}
-    <div className="oa-page-title"><div><div className="oa-eyebrow"><span/> OPPOTRON ADMINISTRATION</div><h1>{section==='overview'?'Platform overview':section==='users'?'Users & organisations':section==='opportunities'?'Funding opportunities':'Discovery engine'}<span>.</span></h1><p>{section==='overview'?'Manage your platform’s funding inventory and discovery activity.':section==='users'?'Inspect registered accounts and the nonprofit records they have saved.':section==='opportunities'?'Create, verify, publish and maintain one shared source of funding records.':'Find funding calls with Firecrawl and Tavily, then review every extraction before publishing.'}</p></div><button className="oa-refresh" onClick={refresh} disabled={loading}><RefreshCw size={16}/>{loading?'Loading…':'Refresh'}</button></div>
+    <div className="oa-page-title"><div><div className="oa-eyebrow"><span/> OPPOTRON ADMINISTRATION</div><h1>{section==='overview'?'Platform overview':section==='users'?'Registered users':section==='npos'?'Nonprofit organisations':section==='funders'?'Funder directory':section==='opportunities'?'Funding opportunities':'Discovery engine'}<span>.</span></h1><p>{section==='overview'?'Manage your platform’s funding inventory and discovery activity.':section==='users'?'Inspect Firebase accounts and their saved organisation profiles.':section==='npos'?'Manage your registered NPO network, profiles and onboarding readiness.':section==='funders'?'Keep permanent funder profiles and their historical or current funding leads.':section==='opportunities'?'Manage current and historical funding calls separately from funders.':'Discover and review new funding calls using Firecrawl and Tavily.'}</p></div><button className="oa-refresh" onClick={refresh} disabled={loading}><RefreshCw size={16}/>{loading?'Loading…':'Refresh'}</button></div>
     {section==='overview'&&<><div className="oa-metrics">
       {([{label:'Registered users',value:summary?.totalUsers,icon:<Users size={20}/>},
        {label:'Organisation records',value:summary?.organisations,icon:<Users size={20}/>},
+        {label:'Funder directory',value:summary?.totalFunders,icon:<Building2 size={20}/>},
        {label:'All opportunities',value:summary?.totalOpportunities,icon:<HeartHandshake size={20}/>},
        {label:'Published',value:summary?.published,icon:<CheckCircle2 size={20}/>},
        {label:'Active deadlines',value:summary?.active,icon:<Clock3 size={20}/>},
        {label:'Pending review',value:summary?.pendingReviews,icon:<FileText size={20}/>},
        {label:'Discovery jobs',value:summary?.discoveryJobs,icon:<Compass size={20}/>}]).map(item=><div className="oa-metric" key={item.label}><div><span>{item.label}</span>{item.icon}</div><strong>{item.value??'—'}</strong><small>{item.label==='Active deadlines'?'Published, deadline not expired':item.label==='Organisation records'?'NPO profiles in Firestore':item.label==='Registered users'?'Requires Firebase service account':'Shared funding administration'}</small></div>)}
-    </div><div className="oa-quick-grid"><button onClick={()=>go('opportunities')}><span><HeartHandshake size={23}/></span><strong>Manage the funding database</strong><small>Review and publish opportunities</small><ArrowRight size={18}/></button><button onClick={()=>go('discovery')}><span><Compass size={23}/></span><strong>Run a funding discovery</strong><small>Search with Firecrawl, fallback Tavily</small><ArrowRight size={18}/></button><button onClick={()=>go('users')}><span><Users size={23}/></span><strong>Review organisations</strong><small>See onboarding and account details</small><ArrowRight size={18}/></button></div>{summary?.partial&&<p className="oa-caveat">Counts are calculated from the first 1,000 organisation and opportunity records. Pagination is required for larger volumes.</p>}</>}
+    </div><div className="oa-quick-grid"><button onClick={()=>go('funders')}><span><Building2 size={23}/></span><strong>Funders & research leads</strong><small>Import 50 Gauteng leads and manage funder profiles</small><ArrowRight size={18}/></button><button onClick={()=>go('opportunities')}><span><HeartHandshake size={23}/></span><strong>Manage the funding database</strong><small>Review and publish opportunities</small><ArrowRight size={18}/></button><button onClick={()=>go('discovery')}><span><Compass size={23}/></span><strong>Run a funding discovery</strong><small>Search with Firecrawl, fallback Tavily</small><ArrowRight size={18}/></button><button onClick={()=>go('npos')}><span><Users size={23}/></span><strong>Review NPO network</strong><small>See onboarding and account details</small><ArrowRight size={18}/></button></div>{summary?.partial&&<p className="oa-caveat">Counts are calculated from the first 1,000 organisation and opportunity records. Pagination is required for larger volumes.</p>}</>}
     {section==='users'&&<section className="oa-panel"><div className="oa-panel-heading"><div><div className="oa-kicker">REGISTERED ACCOUNTS</div><h3>{users.length} accounts loaded</h3><p>Search by email, organisation, UID, focus area or province.</p></div></div>
        {usersWarning&&<div className="oa-caveat">{usersWarning}</div>}
        <div className="oa-toolbar"><label className="oa-search"><Search size={17}/><input value={userSearch} onChange={e=>setUserSearch(e.target.value)} aria-label="Find registered user" placeholder="Find a user or organisation…"/></label></div>
@@ -201,9 +253,33 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
        <div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>ACCOUNT</th><th>ORGANISATION</th><th>REGISTERED</th><th>LAST LOGIN</th><th>ACCOUNT STATUS</th><th>DETAILS</th></tr></thead><tbody>{filteredUsers.map(record=><tr key={record.uid}><td><strong>{record.email||'Email unavailable'}</strong><small>{record.uid}</small></td><td><strong>{String(record.organisation?.name||'No profile yet')}</strong><small>{String(record.organisation?.category||'Focus area not supplied')}</small></td><td>{dateText(record.createdAt)}</td><td>{dateText(record.lastLoginAt||String(record.organisation?._updatedAt||''))}</td><td><span className={'oa-status '+(record.disabled?'archived':'verified')}>{record.disabled?'Disabled':'Active'}</span></td><td><button className="oa-small-link" onClick={()=>setSelectedUser(record)}>View details <ArrowRight size={14}/></button></td></tr>)}</tbody></table></div>:
        <div className="oa-empty">{userSearch?'No users match your search.':'No registered accounts found.'}</div>}
      </section>}
+     {section==='npos'&&<section className="oa-panel">
+      <div className="oa-panel-heading"><div><div className="oa-kicker">YOUR REGISTERED NONPROFITS</div><h3>{npos.length} NPO profiles</h3><p>Organisation records from your existing Firebase users — no duplicate NPO database.</p></div></div>
+      {usersWarning&&<p className="oa-caveat">{usersWarning}</p>}
+      <div className="oa-toolbar"><label className="oa-search"><Search size={17}/><input aria-label="Search registered NPOs" placeholder="Search organisation, focus area or province…" value={userSearch} onChange={e=>setUserSearch(e.target.value)}/></label></div>
+      {loading&&!users.length?<div className="oa-empty" role="status">Loading nonprofits…</div>:filteredNpos.length?
+       <div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>ORGANISATION</th><th>FOCUS AREA</th><th>PROVINCE</th><th>PROFILE</th><th>REGISTERED</th><th>DETAILS</th></tr></thead><tbody>
+       {filteredNpos.map(record=><tr key={record.uid}><td><strong>{String(record.organisation?.name||'Unnamed NPO')}</strong><small>{record.email||'No email'}</small></td><td>{String(record.organisation?.category||'Not supplied')}</td><td>{String(record.organisation?.province||'Not supplied')}</td><td><span className={'oa-status '+(npoProgress(record)>=30?'verified':'neutral')}>{npoProgress(record)}% complete</span></td><td>{dateText(record.createdAt)}</td><td><button className="oa-small-link" onClick={()=>setSelectedUser(record)}>View profile <ArrowRight size={15}/></button></td></tr>)}
+       </tbody></table></div>:<div className="oa-empty">{userSearch?'No NPOs match this search.':'No organisation profiles registered yet.'}</div>}
+     </section>}
+     {section==='funders'&&<div className="oa-funders">
+      <section className="oa-panel oa-research-overview">
+       <div className="oa-panel-heading"><div><div className="oa-kicker">GAUTENG ECD & CHILDREN'S ARTS · 16 NOV 2026</div><h3>Research funder database</h3><p>Permanent funder profiles are separate from grant windows, training, loans and other funding leads.</p></div></div>
+       <div className="oa-research-stats"><div><strong>{researchPreview?.leads??50}</strong><span>research leads</span></div><div><strong>{researchPreview?.funders??37}</strong><span>identified funders</span></div><div><strong>{researchPreview?.explicitlyOpen??8}</strong><span>dated open calls in source</span></div><div><strong>{researchPreview?.imported??'—'}</strong><span>imported opportunities</span></div></div>
+       <p className="oa-caveat">Not 50 open grants. Loans, paid training, fundraising platforms, closed rounds and unconfirmed calls remain drafts. Open-call dates were recorded on 16 November 2026 and need rechecking.</p>
+       {importProgress&&<div className="oa-import-progress" role="status"><div><strong>{seedBusy?'Importing research database…':'Last import attempt'}</strong><span>{importProgress.processed}/{importProgress.total} processed · {importProgress.created} created · {importProgress.skipped} already present</span></div><div className="oa-import-track"><span style={{width:(100*importProgress.processed/Math.max(1,importProgress.total))+'%'}}/></div>{importProgress.errors.length>0&&<small>{importProgress.errors.length} entries need review</small>}</div>}
+       <div className="oa-research-actions"><button className="oa-primary" disabled={seedBusy||loading} onClick={()=>void importResearch()}><RefreshCw size={16}/>{seedBusy?'Importing…':researchPreview?.imported===50?'Recheck and sync research':'Import / retry 50 research leads'}</button><small>Idempotent import: existing records are kept, not overwritten</small></div>
+      </section>
+      <section className="oa-panel"><div className="oa-panel-heading"><div><div className="oa-kicker">FUNDER PROFILES</div><h3>{funders.length} funders saved</h3><p>Funders remain in the directory even when their application windows close.</p></div><button className="oa-primary" onClick={()=>setFunderEditor({...blankFunder})}><Plus size={16}/> Add funder</button></div>
+       <div className="oa-toolbar"><label className="oa-search"><Search size={17}/><input aria-label="Search funders" placeholder="Search funders, sectors or support types…" value={funderSearch} onChange={e=>setFunderSearch(e.target.value)}/></label></div>
+       {loading&&!funders.length?<div className="oa-empty" role="status">Loading funders…</div>:filteredFunders.length?<div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>FUNDER</th><th>AREAS / PROGRAMMES</th><th>RESEARCH LEADS</th><th>STATUS</th><th>DETAILS</th></tr></thead><tbody>
+        {filteredFunders.map(f=><tr key={f.id||f.name}><td><strong>{f.name}</strong><small>{(f.geography||'Geography not recorded').slice(0,95)}</small></td><td><strong>{(f.sectors||[]).slice(0,3).join(', ')||'Not yet categorised'}</strong><small>{(f.fundingTypes||[]).slice(0,2).join(' · ')||'Programmes not specified'}</small></td><td>{f.researchLeadCount||0}</td><td><span className={'oa-status '+(f.published?'verified':'neutral')}>{f.published?'Linked to published call':'Directory / watchlist'}</span></td><td><button className="oa-small-link" onClick={()=>setFunderEditor({...f})}>View / edit <Edit3 size={14}/></button><button className="oa-small-link" onClick={()=>{setSearch(f.name);go('opportunities');}}>View calls <ArrowRight size={14}/></button></td></tr>)}
+       </tbody></table></div>:<div className="oa-empty">{funderSearch?'No funders match your search.':'Funders will appear here as research leads are imported.'}</div>}
+      </section>
+     </div>}
      {section==='opportunities'&&<section className="oa-panel"><div className="oa-panel-heading"><div><div className="oa-kicker">SHARED FUNDING DATABASE</div><h3>{opportunities.length} structured opportunities</h3></div><button className="oa-primary" onClick={()=>{setCandidateEdit(null);setEditor({...emptyEditor});}}><Plus size={17}/> Add manually</button></div>
       <div className="oa-toolbar"><label className="oa-search"><Search size={17}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search funders and opportunities…" aria-label="Search opportunities"/></label><select value={filter} onChange={e=>setFilter(e.target.value)} aria-label="Filter opportunity status"><option value="all">All statuses</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></div>
-      <div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>OPPORTUNITY</th><th>FOCUS AREA</th><th>DEADLINE</th><th>SOURCE REVIEW</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>{list.map(op=><tr key={op.id}><td><strong>{op.title}</strong><small>{op.funder}</small></td><td>{op.sector||'Other'}</td><td>{op.deadline||'Not supplied'}</td><td><span className={'oa-status '+(op.verificationStatus==='verified'?'verified':'neutral')}>{op.verificationStatus==='unverified'?'Not checked':op.verificationStatus==='reviewed'?'Admin reviewed':op.verificationStatus||'Not checked'}</span></td><td><span className={'oa-status '+(op.status==='published'?'published':op.status==='archived'?'archived':'neutral')}>{op.status}</span></td><td><div className="oa-row-actions"><button onClick={()=>{setCandidateEdit(null);setEditor(initialEditor(op));}} title="Edit opportunity" aria-label={'Edit '+op.title} disabled={busy}><Edit3 size={17}/></button>
+      <div className="oa-table-wrap"><table className="oa-table"><thead><tr><th>OPPORTUNITY</th><th>FOCUS AREA</th><th>DEADLINE</th><th>SOURCE REVIEW</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>{list.map(op=><tr key={op.id}><td><strong>{op.title}</strong><small>{op.funder}</small>{op.researchStatus&&<small className="oa-research-status">Source status: {op.researchStatus}</small>}</td><td>{op.researchType||op.sector||'Other'}</td><td>{op.deadline||'Not supplied'}</td><td><span className={'oa-status '+(op.verificationStatus==='verified'?'verified':'neutral')}>{op.verificationStatus==='unverified'?'Not checked':op.verificationStatus==='reviewed'?'Admin reviewed':op.verificationStatus||'Not checked'}</span></td><td><span className={'oa-status '+(op.status==='published'?'published':op.status==='archived'?'archived':'neutral')}>{op.status}</span></td><td><div className="oa-row-actions"><button onClick={()=>{setCandidateEdit(null);setEditor(initialEditor(op));}} title="Edit opportunity" aria-label={'Edit '+op.title} disabled={busy}><Edit3 size={17}/></button>
        {op.status!=='published'?<button onClick={()=>void status(op,'published')} title="Publish opportunity" aria-label={'Publish '+op.title} disabled={busy}><CheckCircle2 size={17}/></button>:<button onClick={()=>void status(op,'draft')} title="Unpublish" aria-label={'Unpublish '+op.title} disabled={busy}><X size={17}/></button>}
        <button onClick={()=>void status(op,'archived')} title="Archive" aria-label={'Archive '+op.title} disabled={busy||op.status==='archived'}><FolderOpen size={17}/></button>
        <button onClick={()=>void action('reverify',{id:op.id})} title="Recheck source with Firecrawl" aria-label={'Recheck '+op.title} disabled={!op.sourceUrl||busy}><RefreshCw size={16}/></button>
@@ -251,6 +327,29 @@ export default function AdminDashboard({user,onExit,onWorkspace}:Props){
     </div>}
    </div>
   </main>
+  {funderEditor&&<div className="oa-modal-backdrop"><section className="oa-modal oa-funder-modal" role="dialog" aria-modal="true" aria-labelledby="oa-funder-dialog-title">
+   <div className="oa-modal-head"><div><div className="oa-kicker">FUNDER DIRECTORY</div><h2 id="oa-funder-dialog-title">{funderEditor.id?'Funder details':'New funder'}</h2><p>Save a funder even if no grant is currently open. Contact details are optional.</p></div><button aria-label="Close funder editor" onClick={()=>setFunderEditor(null)}><X size={20}/></button></div>
+   {error&&<div className="oa-editor-error" role="alert">{error}</div>}
+   <form onSubmit={e=>{e.preventDefault();void saveFunderDetails();}}>
+    <div className="oa-modal-scroll">
+     <div className="oa-form-grid">
+      <label className="full">Funder / organisation name *<input autoFocus required maxLength={180} disabled={Boolean(funderEditor.id)} value={funderEditor.name} onChange={e=>setFunderEditor({...funderEditor,name:e.target.value})}/></label>
+      <label className="full">Website (optional)<input type="url" value={funderEditor.website||''} onChange={e=>setFunderEditor({...funderEditor,website:e.target.value})} placeholder="https://example.org"/></label>
+      <label>Email / CSI contact<input type="email" value={funderEditor.contactEmail||''} onChange={e=>setFunderEditor({...funderEditor,contactEmail:e.target.value})} placeholder="csi@example.org"/></label>
+      <label>Phone / WhatsApp<input type="tel" value={funderEditor.contactPhone||''} onChange={e=>setFunderEditor({...funderEditor,contactPhone:e.target.value})} placeholder="+27 …"/></label>
+      <label className="full">Who they fund / what they support<textarea rows={3} maxLength={2400} value={funderEditor.description||''} onChange={e=>setFunderEditor({...funderEditor,description:e.target.value})}/></label>
+      <label className="full">Internal research notes<textarea rows={3} maxLength={2500} value={funderEditor.notes||''} onChange={e=>setFunderEditor({...funderEditor,notes:e.target.value})}/></label>
+     </div>
+     {funderEditor.researchLeadCount?<div className="oa-funder-sources"><div className="oa-kicker">RESEARCH EVIDENCE</div><p>{funderEditor.researchLeadCount} leads · Last checked {funderEditor.researchLastCheckedAt||'not recorded'}</p>
+      {(funderEditor.fundingTypes||[]).length>0&&<p><strong>Support types:</strong> {funderEditor.fundingTypes?.join(', ')}</p>}
+      {(funderEditor.researchStatuses||[]).length>0&&<p><strong>Recorded statuses:</strong> {funderEditor.researchStatuses?.join(' · ')}</p>}
+      {(funderEditor.sourceUrls||[]).slice(0,6).map(url=><a key={url} target="_blank" rel="noopener noreferrer" href={url}>{url}<ExternalLink size={13}/></a>)}
+     </div>:null}
+     <p className="oa-caveat">A funder's existence does not confirm an open application. Review each funding call independently before encouraging applications.</p>
+    </div>
+    <div className="oa-modal-actions"><button type="button" className="oa-outline" onClick={()=>setFunderEditor(null)}>Cancel</button><button type="submit" className="oa-primary" disabled={busy}>{busy?'Saving…':'Save funder'} <Check size={16}/></button></div>
+   </form>
+  </section></div>}
   {selectedUser&&<div className="oa-modal-backdrop"><section className="oa-modal oa-user-modal" role="dialog" aria-modal="true" aria-labelledby="oa-user-title">
     <div className="oa-modal-head"><div><span className="oa-kicker">REGISTERED ACCOUNT</span><h2 id="oa-user-title">{selectedUser.organisation?.name?String(selectedUser.organisation.name):'Account details'}</h2><p>Firebase account and saved organisation metadata.</p></div><button aria-label="Close account details" onClick={()=>setSelectedUser(null)}><X size={21}/></button></div>
     <div className="oa-modal-scroll"><dl className="oa-user-details">{([

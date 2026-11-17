@@ -76,6 +76,7 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
      <div className="fu-card-overline"><span><HeartHandshake size={15}/> {op.sector||'Funding'}</span><span>{opportunityExpired(op)?'Deadline passed':!op.sourceUrl&&!op.applicationUrl?'Admin-listed':op.verificationStatus==='verified'?'Source checked':'Details unverified'}</span></div>
      <h3>{op.title}</h3><p className="fu-funder">{op.funder}</p>
      <p className="fu-desc">{op.description||'Description not provided. Contact the funder for more information.'}</p>
+      {op.researchType&&<p className="fu-research-context">{op.researchType} · Research checked {op.researchCheckedAt||'16 Nov 2026'}</p>}
      <div className="fu-match-summary"><Sparkles size={17}/><span><strong>{readiness.personalised?m.score+'/95 profile relevance':'Published funding call'}</strong><small>{readiness.personalised?(m.reasons[0]||'Check funder eligibility'):'Personalised ordering starts at 30% profile completion'}</small></span></div>
      <div className="fu-meta"><span><CalendarDays size={14}/>{op.deadline?displayDate(op.deadline):'Deadline not supplied'}</span><span>{op.amount||'Amount not specified'}</span></div>
      <div className="fu-card-actions"><button className="bo-outline" onClick={()=>void save(op)} disabled={working===op.id}><Bookmark size={16} fill={saved.includes(op.id)?'currentColor':'none'}/>{saved.includes(op.id)?'Saved':'Save'}</button><button className="bo-primary" onClick={()=>setSelected(op)}>View details <ArrowRight size={16}/></button></div>
@@ -89,6 +90,7 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
     <div className="fu-modal-body">
      <div className="fu-detail-badges"><span><CalendarDays size={15}/> {displayDate(selected.deadline)}</span><span>{selected.amount||'Funding amount not specified'}</span><span>{selected.coverage||'Coverage unverified'}</span></div>
      <p className="fu-detail-text">{selected.description||'No description has been supplied. Contact the funder to confirm details.'}</p>
+      {selected.researchStatus&&<div className="fu-research-disclaimer"><strong>Research status · {selected.researchStatus}</strong><span>Source checked {selected.researchCheckedAt||'2026-11-16'}. This is a funding lead, not a guaranteed active grant. Confirm the deadline and eligibility directly with the funder.</span>{selected.researchFit&&<small>Applicant fit: {selected.researchFit}</small>}{selected.researchType&&<small>Support type: {selected.researchType}</small>}</div>}
      {(selected.applicationInstructions||selected.contactEmail||selected.contactPhone)&&<><h3><Mail size={17}/> How to apply or enquire</h3>
       {selected.applicationInstructions&&<p className="fu-detail-text">{selected.applicationInstructions}</p>}
       <div className="fu-contact-links">

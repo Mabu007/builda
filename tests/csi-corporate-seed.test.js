@@ -60,7 +60,8 @@ test('public funder view contains historical citations but excludes private note
 test('one-time import only runs in Vercel production after successful build',()=>{
  const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
  const build=pkg.scripts.build;
- assert.ok(build.indexOf('vite build')<build.indexOf('scripts/import-2025-csi-once.mjs'));
+ assert.ok(build.includes('tsc -b && vite build'));
+ assert.doesNotMatch(build,/scripts\/import-2025-csi-once\.mjs/);
  const script=readFileSync(new URL('../scripts/import-2025-csi-once.mjs',import.meta.url),'utf8');
  assert.match(script,/process\.env\.VERCEL_ENV!=='production'/);
  assert.match(script,/existing\?\.csiResearch\?\.importVersion/);

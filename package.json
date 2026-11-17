@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "node scripts/generate-icons.mjs && npm run test && tsc -b && vite build && node scripts/import-2025-csi-once.mjs",
+    "build": "node scripts/generate-icons.mjs && npm run test && tsc -b && vite build",
     "preview": "vite preview",
     "test": "node --test tests/*.test.js"
   },

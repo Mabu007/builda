@@ -12,17 +12,18 @@ import { auth, db } from '../firebase';
 import DocumentVault from './DocumentVault';
 import type { VaultFile } from './DocumentVault';
 import FundingOpportunities from './FundingOpportunities';
+import Funders from './Funders';
 import FundingApplications from './FundingApplications';
 import FundingCreator from './FundingCreator';
 import FundingBriefing from './FundingBriefing';
 import { FUNDING_PROFILE_FIELDS, profileProgress, type FundingOpportunity } from './funding';
 import './workspace.css';
 
-type View = 'overview' | 'opportunities' | 'documents' | 'creator' | 'applications' | 'company' | 'settings';
+type View = 'overview' | 'opportunities' | 'funders' | 'documents' | 'creator' | 'applications' | 'company' | 'settings';
 type Theme = 'light' | 'dark';
 type Organisation = Record<string, string>;
 type Model = { id: string; name: string; promptPrice?: number; completionPrice?: number };
-const views: View[] = ['overview', 'opportunities', 'documents', 'creator', 'applications', 'company', 'settings'];
+const views: View[] = ['overview', 'opportunities', 'funders', 'documents', 'creator', 'applications', 'company', 'settings'];
 const provinces = ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State', 'Limpopo', 'Mpumalanga', 'Northern Cape', 'North West'];
 const focusAreas = ['Youth development', 'Education and skills', 'Community development', 'Food security', 'Health and wellbeing', 'Women empowerment', 'Disability inclusion', 'Environmental conservation', 'Sport and recreation', 'Arts and culture', 'Human rights', 'Economic empowerment', 'Other'];
 const profileFields = FUNDING_PROFILE_FIELDS;
@@ -92,6 +93,8 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
   const [files, setFiles] = useState<VaultFile[]>([]);
   const [notice, setNotice] = useState('');
   const [draftOpportunity, setDraftOpportunity] = useState<FundingOpportunity | null>(null);
+  const [requestedOpportunityId,setRequestedOpportunityId]=useState('');
+  const [funderFocus,setFunderFocus]=useState('');
   const [isAdministrator, setIsAdministrator] = useState(false);
   const [model, setModel] = useState('openrouter/free');
   const [models, setModels] = useState<Model[]>([{ id: 'openrouter/free', name: 'Free auto · OpenRouter' }]);
@@ -103,6 +106,8 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
 
   const changeView = (next: View) => {
     setView(next); setNotice(''); setSidebarOpen(false);
+    setRequestedOpportunityId('');
+    if(next==='funders')setFunderFocus('');
     const path = next === 'overview' ? '/app' : '/app/' + next;
     if (window.location.pathname !== path) window.history.pushState(null, '', path);
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -190,6 +195,7 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
     { label: 'FUNDRAISING WORKSPACE', items: [
       { id: 'overview', label: 'Home', icon: <LayoutDashboard size={18}/> },
       { id: 'opportunities', label: 'Opportunities', icon: <HeartHandshake size={18}/> },
+      { id: 'funders', label: 'Funders', icon: <Building2 size={18}/> },
       { id: 'documents', label: 'Documents', icon: <FolderOpen size={18}/> },
       { id: 'creator', label: 'Document Creator', icon: <FilePenLine size={18}/> },
       { id: 'applications', label: 'Applications', icon: <ClipboardCheck size={18}/> },
@@ -241,7 +247,8 @@ export default function Workspace({ user, onExit }: { user: User; onExit: () => 
             <button onClick={() => changeView('applications')}><ClipboardCheck size={19}/><strong>Applications</strong><span>Prepare and track packages</span><ArrowRight size={15}/></button>
           </div></div>
         </>}
-        {view === 'opportunities' && <FundingOpportunities user={user} profile={profile} files={files} onPrepare={op => { setDraftOpportunity(op); changeView('creator'); }} onApplications={() => changeView('applications')} onProfile={() => changeView('company')}/>}
+        {view === 'opportunities' && <FundingOpportunities user={user} profile={profile} files={files} onPrepare={op => { setDraftOpportunity(op); changeView('creator'); }} onApplications={() => changeView('applications')} onProfile={() => changeView('company')} onFunder={name=>{changeView('funders');setFunderFocus(name);}} openOpportunityId={requestedOpportunityId} onOpenHandled={()=>setRequestedOpportunityId('')}/>}
+        {view === 'funders' && <Funders user={user} focusName={funderFocus} onOpportunity={id=>{changeView('opportunities');setRequestedOpportunityId(id);}}/>}
         {view === 'documents' && <DocumentVault user={user} files={files} loading={vaultLoading} error={vaultError} onNotice={setNotice}/>}
         {view === 'creator' && <FundingCreator user={user} profile={profile} files={files} model={model} opportunity={draftOpportunity}/>}
         {view === 'applications' && <FundingApplications user={user} onOpportunities={() => changeView('opportunities')} onPrepare={op => { setDraftOpportunity(op); changeView('creator'); }}/>}

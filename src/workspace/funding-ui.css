@@ -147,3 +147,12 @@
 .bo-theme-dark .fu-application-guidance strong{color:#c8e5d0}
 .bo-theme-dark .fu-application-guidance p{color:#aec5b6}
 @media(max-width:560px){.fu-contact-links{flex-direction:column}.fu-contact-links a{width:100%}}
+
+
+/* Do not confuse an imported research lead with a verified, guaranteed open grant. */
+.fu-research-context{font-size:10px;line-height:1.6;color:#8da18f;margin:0 0 10px}
+.fu-research-disclaimer{display:grid;gap:6px;background:#f9f6eb;border:1px solid #e9dfc6;padding:15px 17px;border-radius:11px;margin:18px 0 20px}
+.fu-research-disclaimer strong{color:#775e31;font-size:11px}
+.fu-research-disclaimer span,.fu-research-disclaimer small{color:#89754a;font-size:10px;line-height:1.65}
+.bo-theme-dark .fu-research-disclaimer{background:#403a2b;border-color:#685b3c}
+.bo-theme-dark .fu-research-disclaimer strong,.bo-theme-dark .fu-research-disclaimer span,.bo-theme-dark .fu-research-disclaimer small{color:#eddaac}

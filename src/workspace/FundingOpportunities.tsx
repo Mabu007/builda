@@ -1,35 +1,65 @@
-import React, {useEffect,useMemo,useState} from 'react';
+import React, {useEffect,useState} from 'react';
 import type {User} from 'firebase/auth';
-import {collection,deleteDoc,doc,onSnapshot,query,serverTimestamp,setDoc,where} from 'firebase/firestore';
+import {collection,deleteDoc,doc,onSnapshot,serverTimestamp,setDoc} from 'firebase/firestore';
 import {ArrowRight,ArrowUpRight,Bookmark,CalendarDays,ClipboardCheck,ExternalLink,FilePenLine,FileText,HeartHandshake,Info,Mail,MapPin,Phone,Search,Sparkles,Wallet,X} from 'lucide-react';
 import {db} from '../firebase';
-import {matchOpportunity,profileProgress,type FundingOpportunity} from './funding';
+import {profileProgress,type FundingOpportunity} from './funding';
 import {confirmedCall} from './confirmed-funding';
 import {NPO_FUNDING_CATEGORIES,fundingCategory} from './funding-categories';
 import {applicationRoute,applicationSteps,daysToDeadline,displayFundingDate,fundingState,fundingStatusText,importantCondition,plainSummary,whoCanApply} from './opportunity-display';
-import DirectoryPagination,{clampPage} from './DirectoryPagination';
+import DirectoryPagination from './DirectoryPagination';
+import {directoryRequest,type DirectoryPage} from './directory-client';
 import './funding-ui.css';
 type Props={user:User;profile:Record<string,string>;files:{name:string;category:string}[];onPrepare:(op:FundingOpportunity)=>void;onApplications:()=>void;onProfile:()=>void;onFunder:(name:string)=>void;openOpportunityId?:string;onOpenHandled?:()=>void};
 export default function FundingOpportunities({user,profile,files,onPrepare,onApplications,onProfile,onFunder,openOpportunityId,onOpenHandled}:Props){
- const [all,setAll]=useState<FundingOpportunity[]>([]),[saved,setSaved]=useState<string[]>([]),[applications,setApplications]=useState<string[]>([]);
+ const [rows,setRows]=useState<FundingOpportunity[]>([]);
+ const [total,setTotal]=useState(0),[page,setPage]=useState(1);
+ const [saved,setSaved]=useState<string[]>([]),[applications,setApplications]=useState<string[]>([]);
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[selected,setSelected]=useState<FundingOpportunity|null>(null);
- const [search,setSearch]=useState(''),[sector,setSector]=useState(''),[working,setWorking]=useState('');
+ const [search,setSearch]=useState(''),[debouncedSearch,setDebouncedSearch]=useState(''),[sector,setSector]=useState(''),[working,setWorking]=useState('');
  const pageSize=12;
- const [page,setPage]=useState(1);
  useEffect(()=>{
-  if(!db){setError('Firestore is not configured.');setLoading(false);return;}
-  const u=onSnapshot(query(collection(db,'opportunities'),where('published','==',true)),snap=>{
-   setAll(snap.docs.map(entry=>({...entry.data(),id:entry.id} as FundingOpportunity)));setLoading(false);setError('');
-  },()=>{setError('Funding opportunities cannot be loaded. Check Firestore rules and retry.');setLoading(false);});
-  const s=onSnapshot(collection(db,'contractors',user.uid,'savedFunding'),snap=>setSaved(snap.docs.map(item=>item.id)),()=>setError('Saved opportunities could not be loaded.'));
-  const a=onSnapshot(collection(db,'contractors',user.uid,'applications'),snap=>setApplications(snap.docs.map(item=>item.id)),()=>setError('Applications could not be loaded.'));
-  return()=>{u();s();a();};
+  const timer=window.setTimeout(()=>{setDebouncedSearch(search);setPage(1);},260);
+  return()=>window.clearTimeout(timer);
+ },[search]);
+ useEffect(()=>setPage(1),[sector]);
+ useEffect(()=>{
+  const controller=new AbortController();
+  setLoading(true);
+  directoryRequest<DirectoryPage<FundingOpportunity>>(user,'/api/directory?kind=opportunities',{
+   body:{page,limit:pageSize,sector,search:debouncedSearch,profile},signal:controller.signal
+  }).then(data=>{
+   if(controller.signal.aborted)return;
+   setRows(data.items);setTotal(data.total);setLoading(false);setError('');
+   if(data.page>1&&!data.items.length&&data.total>0)setPage(Math.max(1,Math.ceil(data.total/pageSize)));
+  }).catch(e=>{
+   if(controller.signal.aborted)return;
+   setLoading(false);setError(e instanceof Error?e.message:'Funding opportunities cannot be loaded.');
+  });
+  return()=>controller.abort();
+ },[user.uid,page,sector,debouncedSearch,profile]);
+ useEffect(()=>{
+  if(!db)return;
+  const s=onSnapshot(collection(db,'contractors',user.uid,'savedFunding'),
+   snap=>setSaved(snap.docs.map(item=>item.id)),
+   ()=>setError('Saved opportunities could not be loaded.'));
+  const a=onSnapshot(collection(db,'contractors',user.uid,'applications'),
+   snap=>setApplications(snap.docs.map(item=>item.id)),
+   ()=>setError('Applications could not be loaded.'));
+  return()=>{s();a();};
  },[user.uid]);
+ // Deep-linked opportunities may be on any server page; fetch the exact record
+ // rather than downloading the whole collection just to open its modal.
  useEffect(()=>{
   if(!openOpportunityId)return;
-  const found=all.find(op=>op.id===openOpportunityId);
-  if(found){setSelected(found);onOpenHandled?.();}
- },[openOpportunityId,all,onOpenHandled]);
+  const controller=new AbortController();
+  directoryRequest<{item:FundingOpportunity}>(user,
+   '/api/directory?kind=opportunity&id='+encodeURIComponent(openOpportunityId),
+   {signal:controller.signal})
+   .then(data=>{if(!controller.signal.aborted){setSelected(data.item);onOpenHandled?.();}})
+   .catch(e=>{if(!controller.signal.aborted){setError(e instanceof Error?e.message:'Opportunity unavailable.');onOpenHandled?.();}});
+  return()=>controller.abort();
+ },[openOpportunityId,user.uid]);
  useEffect(()=>{
   if(!selected)return;
   const previous=document.body.style.overflow;
@@ -40,19 +70,6 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
  },[Boolean(selected)]);
  const readiness=profileProgress(profile);
  const sectors=NPO_FUNDING_CATEGORIES;
- const matched=useMemo(()=>all.filter(op=>op.status==='published').map(op=>({op,match:matchOpportunity(op,profile,files)}))
-  .sort((a,b)=>{
-   // Verified active application windows take precedence over undated or
-   // unverified enquiries; expired records always appear last.
-   const ranks={open:0,enquire:1,closed:2};
-   const stateDiff=ranks[fundingState(a.op)]-ranks[fundingState(b.op)];
-   return stateDiff || (readiness.personalised?b.match.score-a.match.score:0) ||
-    (a.op.deadline||'9999').localeCompare(b.op.deadline||'9999') || a.op.title.localeCompare(b.op.title);
-  }),[all,profile,files,readiness.personalised]);
- const visible=useMemo(()=>matched.filter(row=>(!sector||fundingCategory(row.op)===sector)&&(!search||[row.op.title,row.op.funder,row.op.sector,row.op.description,row.op.contactEmail||'',row.op.contactPhone||''].join(' ').toLowerCase().includes(search.trim().toLowerCase()))),[matched,sector,search]);
- const currentPage=clampPage(page,visible.length,pageSize);
- const pageItems=useMemo(()=>visible.slice((currentPage-1)*pageSize,currentPage*pageSize),[visible,currentPage]);
- useEffect(()=>setPage(1),[search,sector]);
  const save=async(op:FundingOpportunity)=>{
   if(!db||working)return;setWorking(op.id);
   try{
@@ -95,11 +112,11 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
     <div className="fu-onboarding-progress"><span style={{width:readiness.percent+'%'}}/></div><small>{readiness.percent}% completed · Personalisation begins at 30%</small>
    </div><button className="bo-outline" onClick={onProfile}>Add profile details <ArrowRight size={16}/></button>
   </section>}
-   <div className="fu-opportunities-summary"><span><Sparkles size={17}/> <strong>{loading?'—':matched.length}</strong> published opportunities</span><small>{readiness.personalised?'Tailored ranking enabled · All opportunities remain visible':'Browse without a profile · Personalisation starts at 30%'} · Check funder requirements</small></div>
+   <div className="fu-opportunities-summary"><span><Sparkles size={17}/> <strong>{loading?'—':total}</strong> published opportunities</span><small>{readiness.personalised?'Tailored ranking enabled · All opportunities remain visible':'Browse without a profile · Personalisation starts at 30%'} · Check funder requirements</small></div>
    <div className="fu-toolbar"><label className="fu-search"><Search size={18}/><input aria-label="Search funding opportunities" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search funding, funders or programmes…"/></label>
     <select aria-label="Funding sector" value={sector} onChange={e=>setSector(e.target.value)}><option value="">All 11 focus areas</option>{sectors.map(x=><option key={x}>{x}</option>)}</select></div>
    {loading?<div className="bo-skeleton-wrap">{[1,2,3].map(i=><div className="bo-skeleton" key={i}/>)}</div>:
-    visible.length?<><div className="fu-opportunity-grid">{pageItems.map(({op})=><article className="fu-opportunity-card" key={op.id}>
+    rows.length?<><div className="fu-opportunity-grid">{rows.map(op=><article className="fu-opportunity-card" key={op.id}>
      <div className="fu-card-overline"><span><HeartHandshake size={15}/> {fundingCategory(op)}</span><span className={'fu-card-state fu-state-'+fundingState(op)}>{fundingStatusText(op)}</span></div>
      <h3>{op.title}</h3><p className="fu-funder">{op.funder}</p>
      <p className="fu-desc">{plainSummary(op)}</p>
@@ -107,9 +124,9 @@ export default function FundingOpportunities({user,profile,files,onPrepare,onApp
      
      <div className="fu-meta"><span><CalendarDays size={14}/>{op.deadline?displayFundingDate(op.deadline):'No deadline listed'}</span><span>{op.amount||'Amount not specified'}</span></div>
      <div className="fu-card-actions"><button className="bo-outline" onClick={()=>void save(op)} disabled={working===op.id}><Bookmark size={16} fill={saved.includes(op.id)?'currentColor':'none'}/>{saved.includes(op.id)?'Saved':'Save'}</button><button className="bo-primary" onClick={()=>setSelected(op)}>View details <ArrowRight size={16}/></button></div>
-    </article>)}</div><DirectoryPagination page={currentPage} pageSize={pageSize} total={visible.length} label="opportunities" onPage={setPage}/></>:<section className="fu-empty"><span className="fu-empty-symbol"><HeartHandshake size={28}/></span>
-     <h2>{all.length?'No opportunities match these filters.':'Funding sources are being added.'}</h2>
-     <p>{all.length?'Try clearing the search or selecting all focus areas. Every published call remains accessible.':'The administration team is discovering and reviewing funding calls. Published records will appear here automatically.'}</p>
+    </article>)}</div><DirectoryPagination page={page} pageSize={pageSize} total={total} label="opportunities" onPage={setPage}/></>:<section className="fu-empty"><span className="fu-empty-symbol"><HeartHandshake size={28}/></span>
+     <h2>{search||sector?'No opportunities match these filters.':'Funding sources are being added.'}</h2>
+     <p>{search||sector?'Try clearing the search or selecting all focus areas. Every published call remains accessible.':'The administration team is discovering and reviewing funding calls. Published records will appear here automatically.'}</p>
     </section>}
   {selected&&<div className="fu-modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setSelected(null);}}>
    <section className="fu-modal fu-modal-redesign" role="dialog" aria-modal="true" aria-labelledby="fu-modal-title">

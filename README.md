@@ -132,3 +132,13 @@ npm run build
 Build includes Node unit/integration tests, TypeScript compilation and the Vite frontend build.
 
 Repository remains `Mabu007/builda`; production Vercel project and existing URL `https://builda-five.vercel.app` are retained.
+
+### Verified funding goldmine release — 17 November 2026
+
+- The production Firestore import completed on 17 November 2026: **25 verified new opportunities created**, zero duplicates and zero errors. The batch covers 18 funding organisations, 16 deadline-based calls and nine rolling programmes.
+- **19 funder records gained verified contact data** without overwriting existing editorial updates. Three newly published opportunities were read back successfully from Firestore.
+- All opportunity source links and application requirements are retained in `api/_lib/verified-open-calls-2026.js`. The original funder websites were the verification basis; programmes that were already closed or non-eligible for South Africa were rejected. Application routes are only set when an actual submission page is confirmed.
+- The public Funders view is a concise **Funder | What they support | Opportunities | Contact** table and a simple details modal. Historical CSI totals remain in backend research, never exposed in the public projection.
+- Users can filter published opportunities by 11 nonprofit funding sectors.
+- The one-time `scripts/import-verified-open-calls-once.mjs` migration is now **removed from normal builds** to avoid unnecessary writes. The script remains guarded and recoverable for manual audited re-runs; do not re-enable it for ordinary releases.
+- Data freshness: the source audit date is 17 November 2026; funders may amend deadlines, funding or conditions. It is essential to monitor official updates and archive expired windows. The 25 published items are not all unrestricted cash grants: some are service/implementation partnerships.

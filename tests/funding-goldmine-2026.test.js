@@ -60,7 +60,7 @@ test('funders public API and new UI strip internal CSI spending, never invent co
 });
 test('all 11 user-requested NPO funding categories appear as filters',()=>{
  const c=src('src/workspace/funding-categories.ts');
- const matches=c.match(/^ '.*',$/gm)||[];
+ const matches=c.match(/^ '.*',?$/gm)||[];
  assert.equal(matches.length,11);
  assert.match(src('src/workspace/FundingOpportunities.tsx'),/NPO_FUNDING_CATEGORIES/);
 });

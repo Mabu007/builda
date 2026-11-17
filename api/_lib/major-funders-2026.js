@@ -886,5 +886,18 @@ export const MAJOR_FUNDERS=[
     "sourceUrl": "https://www.mott.org/",
     "kind": "Verified institution / funder",
     "lastCheckedAt": "2026-11-17"
+  },
+  {
+    "name": "Rand Water Foundation",
+    "website": "https://www.randwater.co.za/corporateresponsibility.php",
+    "sectors": [
+      "Community Development & Housing",
+      "Environment & Conservation"
+    ],
+    "contactEmail": "",
+    "contactPhone": "011 682 0911",
+    "sourceUrl": "https://www.randwater.co.za/rwf_announcements.php",
+    "kind": "Verified institution / funder",
+    "lastCheckedAt": "2026-11-17"
   }
 ];

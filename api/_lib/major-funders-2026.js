@@ -936,5 +936,77 @@ export const MAJOR_FUNDERS=[
     "sourceUrl": "https://iwt.challengefund.org.uk/how-to-apply/",
     "kind": "Verified institution / funder",
     "lastCheckedAt": "2026-11-17"
+  },
+  {
+    "name": "International Climate Initiative (IKI) Small Grants",
+    "website": "https://iki-small-grants.de/",
+    "sectors": [
+      "Environment & Conservation"
+    ],
+    "contactEmail": "",
+    "contactPhone": "",
+    "sourceUrl": "https://iki-small-grants.de/funding/",
+    "kind": "Verified institution / funder",
+    "lastCheckedAt": "2026-11-17"
+  },
+  {
+    "name": "HawkWatch International",
+    "website": "https://hawkwatch.org/",
+    "sectors": [
+      "Environment & Conservation"
+    ],
+    "contactEmail": "conservation.grant@hawkwatch.org",
+    "contactPhone": "",
+    "sourceUrl": "https://hawkwatch.org/investing-in-others/grrcg/",
+    "kind": "Verified institution / funder",
+    "lastCheckedAt": "2026-11-17"
+  },
+  {
+    "name": "Roger Williams Park Zoo",
+    "website": "https://www.rwpzoo.org/",
+    "sectors": [
+      "Environment & Conservation"
+    ],
+    "contactEmail": "SophieDanforth@rwpzoo.org",
+    "contactPhone": "",
+    "sourceUrl": "https://www.rwpzoo.org/danforth-conservation-grants/",
+    "kind": "Verified institution / funder",
+    "lastCheckedAt": "2026-11-17"
+  },
+  {
+    "name": "Rainforest Trust",
+    "website": "https://www.rainforesttrust.org/",
+    "sectors": [
+      "Environment & Conservation"
+    ],
+    "contactEmail": "projects@rainforesttrust.org",
+    "contactPhone": "",
+    "sourceUrl": "https://www.rainforesttrust.org/get-involved/apply-for-funding/",
+    "kind": "Verified institution / funder",
+    "lastCheckedAt": "2026-11-17"
+  },
+  {
+    "name": "IDEA WILD",
+    "website": "https://ideawild.org/",
+    "sectors": [
+      "Environment & Conservation"
+    ],
+    "contactEmail": "applications@ideawild.org",
+    "contactPhone": "",
+    "sourceUrl": "https://ideawild.org/application-guidelines/",
+    "kind": "Verified institution / funder",
+    "lastCheckedAt": "2026-11-17"
+  },
+  {
+    "name": "New England Aquarium",
+    "website": "https://www.neaq.org/",
+    "sectors": [
+      "Environment & Conservation"
+    ],
+    "contactEmail": "eduwan@neaq.org",
+    "contactPhone": "",
+    "sourceUrl": "https://www.neaq.org/conservation-and-research/marine-conservation-action-fund/",
+    "kind": "Verified institution / funder",
+    "lastCheckedAt": "2026-11-17"
   }
 ];
